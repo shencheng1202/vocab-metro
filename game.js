@@ -483,6 +483,16 @@ class Train {
                             }
                         }
                         
+                        // DESTROY: Remove the line and train after EVERY delivery attempt
+                        const lineIndex = lines.indexOf(this.line);
+                        if (lineIndex > -1) {
+                            lines.splice(lineIndex, 1);
+                        }
+                        const trainIndex = trains.indexOf(this);
+                        if (trainIndex > -1) {
+                            trains.splice(trainIndex, 1);
+                        }
+                        
                         // DESTROY: Remove the hub that delivered this word
                         const hubIndex = hubs.findIndex(h => h.word === station.word);
                         if (hubIndex > -1) {
@@ -973,7 +983,7 @@ function updateInfoPanel() {
 function drawEtymologyHintBar(ctx) {
     if (gameState !== 'playing' || !currentVocabData || currentVocabData.length === 0) return;
     
-    const barHeight = 100;
+    const barHeight = 90;
     const barY = canvas.height - barHeight - 10;
     const padding = 30;
     
@@ -988,21 +998,21 @@ function drawEtymologyHintBar(ctx) {
     
     // Draw title like stat-box h3
     ctx.fillStyle = '#00d4ff';
-    ctx.font = 'bold 14px Arial';
+    ctx.font = 'bold 12px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText('ETYMOLOGY HINTS', canvas.width / 2, barY + 10);
+    ctx.fillText('ETYMOLOGY HINTS', canvas.width / 2, barY + 8);
     
     // Build hint text from current level's 4 words
     let hintText = '';
     currentVocabData.forEach((data, index) => {
-        if (index > 0) hintText += '  |  ';
+        if (index > 0) hintText += '  •  ';
         hintText += `${data.word}: ${data.hint}`;
     });
     
-    // Draw hint text - same style as stat-box p (large, bold, white)
+    // ADJUSTED: Smaller font size to fit all hints on screen
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 18px Arial';
+    ctx.font = 'bold 13px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
