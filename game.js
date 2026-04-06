@@ -774,8 +774,11 @@ function handleFileUpload(event) {
 
 // Initialize level - clean map with dynamic number of word-sentence pairs
 function initLevel(level) {
+    console.log('initLevel called:', level);
     currentLevel = level;
     currentVocabData = levelData[level - 1]; // Get words for this level
+    
+    console.log('currentVocabData:', currentVocabData);
     
     // Safety check: ensure currentVocabData exists
     if (!currentVocabData || currentVocabData.length === 0) {
@@ -785,6 +788,7 @@ function initLevel(level) {
     }
     
     wordsDeliveredInLevel = 0;
+    console.log('Creating', currentVocabData.length, 'hubs and stations');
     
     // Clear the map completely
     hubs = [];
@@ -814,6 +818,7 @@ function initLevel(level) {
     });
     
     updateUI();
+    console.log('initLevel complete, hubs:', hubs.length, 'stations:', stations.length);
 }
 
 // Input handling
