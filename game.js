@@ -1,17 +1,20 @@
 // Vocab Metro - English Vocabulary Learning Game
-// Inspired by Mini Metro
+// Level-Based Progression System
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Game state
-let gameState = 'start'; // start, playing, gameover, win
+let gameState = 'start'; // start, playing, levelComplete, gameover, win
+let currentLevel = 1;
+const totalLevels = 5;
 let score = 0;
-let wordsDelivered = 0;
-let totalWords = 20;
+let wordsDeliveredInLevel = 0;
+let totalWordsDelivered = 0;
 let lines = [];
 let trains = [];
 let particles = [];
+let hoveredStation = null;
 
 // Line colors (Mini Metro style)
 const lineColors = [
@@ -25,8 +28,8 @@ const lineColors = [
     '#ff6b9d'  // Pink
 ];
 
-// Vocabulary data
-const vocabData = [
+// Full vocabulary data (20 words)
+const allVocabData = [
     { word: "Torment", sentence: "The guilt of his past mistakes continued to ________ him for decades, even after he apologized to those he had hurt and spent his life trying to make amends." },
     { word: "Indulgent", sentence: "My grandmother is always ________ with her grandchildren, spoiling them with sweet treats and letting them stay up late whenever they visit her countryside home." },
     { word: "Abandon", sentence: "When she realized the mission was impossible and all hope was lost, she chose to ________ the project that had consumed her years of hard work and dedication." },
@@ -48,6 +51,19 @@ const vocabData = [
     { word: "Tedious", sentence: "Sorting through thousands of old documents and typing up handwritten notes is a ________ task, but it is essential for preserving the history of the small town." },
     { word: "Extraordinary", sentence: "The young musician gave an ________ performance at the concert hall, playing the piano with a passion and skill that left the entire audience standing and cheering." }
 ];
+
+// Level data - 4 words per level, 5 levels total = 20 words
+// Each level is completely independent with its own 4 word-sentence pairs
+const levelData = [
+    allVocabData.slice(0, 4),   // Level 1: words 0-3
+    allVocabData.slice(4, 8),   // Level 2: words 4-7
+    allVocabData.slice(8, 12),  // Level 3: words 8-11
+    allVocabData.slice(12, 16), // Level 4: words 12-15
+    allVocabData.slice(16, 20)  // Level 5: words 16-19
+];
+
+// Current level vocabulary
+let currentVocabData = [];
 
 // Game entities
 let hubs = [];
@@ -107,7 +123,7 @@ class Hub {
         this.y = y;
         this.word = word;
         this.id = id;
-        this.radius = 25;
+        this.radius = 22;
         this.pulsePhase = Math.random() * Math.PI * 2;
         this.hasWord = true;
     }
@@ -119,17 +135,10 @@ class Hub {
     draw(ctx) {
         // Glow effect
         const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
-        ctx.shadowBlur = 20 * pulse;
+        ctx.shadowBlur = 15 * pulse;
         ctx.shadowColor = '#ff6b6b';
         
-        // Outer ring
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255, 107, 107, ${0.5 * pulse})`;
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        
-        // Main circle
+        // Main circle - clean, minimal
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = '#ff6b6b';
@@ -137,17 +146,12 @@ class Hub {
         
         ctx.shadowBlur = 0;
         
-        // Word text
+        // Word text - clean small font
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px Arial';
+        ctx.font = 'bold 11px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.word, this.x, this.y);
-        
-        // Label
-        ctx.fillStyle = '#ff6b6b';
-        ctx.font = '10px Arial';
-        ctx.fillText('HUB', this.x, this.y - this.radius - 15);
     }
 }
 
@@ -155,33 +159,32 @@ class Station {
     constructor(x, y, word, sentence, id) {
         this.x = x;
         this.y = y;
-        this.word = word;
+        this.word = word; // Hidden answer - not displayed in UI
         this.sentence = sentence;
         this.id = id;
-        this.radius = 20;
-        this.patience = 100;
-        this.maxPatience = 100;
-        this.patienceDecay = 2; // per second
+        this.radius = 18;
+        // Extended for ~30 minute gameplay: 7.5 minutes per level, ~1.875 minutes per word
+        this.patience = 450; // 7.5 minutes in seconds (450s)
+        this.maxPatience = 450;
+        this.patienceDecay = 0.5; // Slower decay for prolonged gameplay
         this.completed = false;
-        this.satisfied = false; // New: station is satisfied but not yet removed
-        this.pulsePhase = 0;
-        this.successTimer = 0; // New: 3-second success animation timer
-        this.successPulsePhase = 0; // New: for glow animation
-        this.fadeOutAlpha = 1; // New: for fade out effect
+        this.satisfied = false;
+        this.pulsePhase = Math.random() * Math.PI * 2;
+        this.successTimer = 0;
+        this.successPulsePhase = 0;
+        this.fadeOutAlpha = 1;
+        this.hoverPhase = 0;
     }
 
     update(deltaTime) {
-        // If satisfied (success animation phase)
         if (this.satisfied) {
             this.successTimer -= deltaTime;
-            this.successPulsePhase += deltaTime * 4; // Faster pulse for success
+            this.successPulsePhase += deltaTime * 4;
             
-            // Fade out in last 0.5 seconds
             if (this.successTimer < 0.5) {
                 this.fadeOutAlpha = this.successTimer / 0.5;
             }
             
-            // Remove station after animation
             if (this.successTimer <= 0) {
                 this.completed = true;
                 this.fadeOutAlpha = 0;
@@ -189,11 +192,19 @@ class Station {
             return;
         }
         
-        // Normal gameplay
         if (this.completed) return;
         
         this.patience -= this.patienceDecay * deltaTime;
         this.pulsePhase += deltaTime * 3;
+        
+        // Check hover
+        const isHovered = distance(mouse, this) < this.radius + 10;
+        if (isHovered) {
+            this.hoverPhase = Math.min(this.hoverPhase + deltaTime * 5, 1);
+            hoveredStation = this;
+        } else {
+            this.hoverPhase = Math.max(this.hoverPhase - deltaTime * 5, 0);
+        }
         
         if (this.patience <= 0) {
             gameOver();
@@ -202,247 +213,107 @@ class Station {
 
     markSatisfied() {
         this.satisfied = true;
-        this.successTimer = 3; // 3 seconds success animation
+        this.successTimer = 2;
         this.fadeOutAlpha = 1;
     }
 
-    drawSuccessState(ctx) {
-        ctx.globalAlpha = this.fadeOutAlpha;
-        
-        // Calculate glow intensity (pulsing effect)
-        const pulse = Math.sin(this.successPulsePhase) * 0.3 + 0.7;
-        const glowSize = 20 + 15 * pulse;
-        
-        // Outer glow effect (gold/green success color)
-        ctx.shadowBlur = glowSize;
-        ctx.shadowColor = '#ffd700'; // Gold color
-        
-        // Success ring (growing)
-        const ringProgress = 1 - (this.successTimer / 3); // 0 to 1
-        const ringRadius = this.radius + 8 + ringProgress * 10;
-        
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255, 215, 0, ${0.8 * pulse})`;
-        ctx.lineWidth = 4;
-        ctx.stroke();
-        
-        // Main shape with success color
-        ctx.beginPath();
-        ctx.roundRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2, 8);
-        ctx.fillStyle = '#6bcf7f'; // Success green
-        ctx.fill();
-        
-        ctx.shadowBlur = 0;
-        
-        // Success checkmark
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 20px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('✓', this.x, this.y);
-        
-        // Draw completed sentence tooltip
-        this.drawCompletedTooltip(ctx);
-        
-        ctx.globalAlpha = 1;
-    }
-
     draw(ctx) {
-        // Completed and faded out
         if (this.completed) return;
         
-        // Satisfied (success animation phase)
         if (this.satisfied) {
             this.drawSuccessState(ctx);
             return;
         }
         
-        // Patience ring
         const patienceRatio = this.patience / this.maxPatience;
         const ringColor = patienceRatio > 0.5 ? '#6bcf7f' : patienceRatio > 0.25 ? '#ffd93d' : '#ff6b6b';
         
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * patienceRatio);
-        ctx.strokeStyle = ringColor;
-        ctx.lineWidth = 4;
-        ctx.stroke();
+        // Hover glow effect
+        if (this.hoverPhase > 0) {
+            ctx.shadowBlur = 20 * this.hoverPhase;
+            ctx.shadowColor = '#00d4ff';
+        }
         
-        // Glow based on urgency
+        // Urgency glow for low patience
         if (patienceRatio < 0.25) {
             const pulse = Math.sin(this.pulsePhase) * 0.5 + 0.5;
             ctx.shadowBlur = 15 * pulse;
             ctx.shadowColor = '#ff6b6b';
         }
         
-        // Main shape (rounded rectangle style)
+        // Patience ring - visual representation of remaining time
         ctx.beginPath();
-        ctx.roundRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2, 8);
+        ctx.arc(this.x, this.y, this.radius + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * patienceRatio);
+        ctx.strokeStyle = ringColor;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // Time indicator text (minutes remaining)
+        const minutesLeft = Math.ceil(this.patience / 60);
+        ctx.fillStyle = ringColor;
+        ctx.font = 'bold 9px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${minutesLeft}m`, this.x, this.y + this.radius + 15);
+        
+        // Main shape - speech bubble style
         ctx.fillStyle = '#ffd93d';
-        ctx.fill();
+        this.drawSpeechBubble(ctx, this.x, this.y, this.radius);
         
         ctx.shadowBlur = 0;
         
-        // Word hint (first letter)
+        // Question mark icon
         ctx.fillStyle = '#1a1a2e';
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(this.word[0] + '...', this.x, this.y);
-        
-        // Sentence tooltip on hover
-        if (distance(mouse, this) < this.radius + 10) {
-            this.drawTooltip(ctx);
-        }
+        ctx.fillText('?', this.x, this.y - 1);
+    }
+    
+    drawSpeechBubble(ctx, x, y, r) {
+        ctx.beginPath();
+        // Main circle
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        // Small tail
+        ctx.beginPath();
+        ctx.moveTo(x + r * 0.6, y + r * 0.6);
+        ctx.lineTo(x + r * 1.2, y + r * 1.2);
+        ctx.lineTo(x + r * 0.2, y + r * 0.9);
+        ctx.closePath();
+        ctx.fill();
     }
 
-    drawCompletedTooltip(ctx) {
-        const maxWidth = 350;
-        const padding = 12;
-        const lineHeight = 20;
+    drawSuccessState(ctx) {
+        ctx.globalAlpha = this.fadeOutAlpha;
         
-        // Replace blank with the word (highlighted)
-        const completedSentence = this.sentence.replace('________', this.word);
+        const pulse = Math.sin(this.successPulsePhase) * 0.3 + 0.7;
+        const glowSize = 15 + 10 * pulse;
         
-        // Word wrap sentence
-        const words = completedSentence.split(' ');
-        let lines = [];
-        let currentLine = '';
+        ctx.shadowBlur = glowSize;
+        ctx.shadowColor = '#ffd700';
         
-        ctx.font = 'bold 13px Arial';
+        const ringProgress = 1 - (this.successTimer / 2);
+        const ringRadius = this.radius + 5 + ringProgress * 8;
         
-        for (let word of words) {
-            const testLine = currentLine + word + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && currentLine !== '') {
-                lines.push(currentLine);
-                currentLine = word + ' ';
-            } else {
-                currentLine = testLine;
-            }
-        }
-        lines.push(currentLine);
-        
-        const tooltipWidth = maxWidth + padding * 2;
-        const tooltipHeight = lines.length * lineHeight + padding * 2 + 25;
-        
-        let tx = this.x + 30;
-        let ty = this.y - tooltipHeight / 2;
-        
-        // Keep on screen
-        if (tx + tooltipWidth > canvas.width) tx = this.x - tooltipWidth - 30;
-        if (ty < 0) ty = 10;
-        if (ty + tooltipHeight > canvas.height) ty = canvas.height - tooltipHeight - 10;
-        
-        // Background with success styling
-        ctx.fillStyle = 'rgba(107, 207, 127, 0.95)'; // Success green background
-        ctx.strokeStyle = '#ffd700'; // Gold border
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 215, 0, ${0.8 * pulse})`;
         ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.roundRect(tx, ty, tooltipWidth, tooltipHeight, 10);
-        ctx.fill();
         ctx.stroke();
         
-        // Title
-        ctx.fillStyle = '#1a1a2e';
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText('✓ Completed!', tx + padding, ty + padding + 14);
+        ctx.fillStyle = '#6bcf7f';
+        this.drawSpeechBubble(ctx, this.x, this.y, this.radius);
         
-        // Completed sentence with word highlighted
-        let currentY = ty + padding + 35;
-        ctx.font = 'bold 13px Arial';
+        ctx.shadowBlur = 0;
         
-        lines.forEach((line) => {
-            const lineWords = line.trim().split(' ');
-            let currentX = tx + padding;
-            
-            lineWords.forEach((word) => {
-                const cleanWord = word.replace(/[.,!?;:]$/, '');
-                const isTargetWord = cleanWord.toLowerCase() === this.word.toLowerCase();
-                
-                if (isTargetWord) {
-                    // Highlight the delivered word
-                    ctx.fillStyle = '#1a1a2e';
-                    ctx.font = 'bold 14px Arial';
-                    
-                    // Draw highlight background
-                    const wordWidth = ctx.measureText(word + ' ').width;
-                    ctx.fillStyle = '#ffd700'; // Gold highlight
-                    ctx.fillRect(currentX - 2, currentY - 14, wordWidth, 18);
-                    
-                    // Draw word
-                    ctx.fillStyle = '#1a1a2e';
-                    ctx.fillText(word + ' ', currentX, currentY);
-                    ctx.font = 'bold 13px Arial';
-                } else {
-                    ctx.fillStyle = '#1a1a2e';
-                    ctx.fillText(word + ' ', currentX, currentY);
-                }
-                
-                currentX += ctx.measureText(word + ' ').width;
-            });
-            
-            currentY += lineHeight;
-        });
-    }
-
-    drawTooltip(ctx) {
-        const maxWidth = 300;
-        const padding = 10;
-        const lineHeight = 18;
-        
-        // Word wrap sentence
-        const words = this.sentence.split(' ');
-        let lines = [];
-        let currentLine = '';
-        
-        ctx.font = '12px Arial';
-        
-        for (let word of words) {
-            const testLine = currentLine + word + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && currentLine !== '') {
-                lines.push(currentLine);
-                currentLine = word + ' ';
-            } else {
-                currentLine = testLine;
-            }
-        }
-        lines.push(currentLine);
-        
-        const tooltipWidth = maxWidth + padding * 2;
-        const tooltipHeight = lines.length * lineHeight + padding * 2 + 20;
-        
-        let tx = this.x + 30;
-        let ty = this.y - tooltipHeight / 2;
-        
-        // Keep on screen
-        if (tx + tooltipWidth > canvas.width) tx = this.x - tooltipWidth - 30;
-        if (ty < 0) ty = 10;
-        if (ty + tooltipHeight > canvas.height) ty = canvas.height - tooltipHeight - 10;
-        
-        // Background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-        ctx.strokeStyle = '#ffd93d';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(tx, ty, tooltipWidth, tooltipHeight, 8);
-        ctx.fill();
-        ctx.stroke();
-        
-        // Word
-        ctx.fillStyle = '#ffd93d';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText('Needs: ' + this.word, tx + padding, ty + padding + 12);
-        
-        // Sentence
         ctx.fillStyle = '#fff';
-        ctx.font = '12px Arial';
-        lines.forEach((line, i) => {
-            ctx.fillText(line, tx + padding, ty + padding + 30 + i * lineHeight);
-        });
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('✓', this.x, this.y);
+        
+        ctx.globalAlpha = 1;
     }
 }
 
@@ -471,7 +342,7 @@ class Line {
         if (this.points.length < 2) return;
         
         ctx.strokeStyle = this.color;
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         
@@ -482,7 +353,6 @@ class Line {
         }
         ctx.stroke();
         
-        // Inner white line for style
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -497,20 +367,19 @@ class Line {
 class Train {
     constructor(line) {
         this.line = line;
-        this.position = 0; // 0 to 1 along line
-        this.speed = 0.15; // units per second
+        this.position = 0;
+        this.speed = 0.08; // Slower train speed for ~30 minute gameplay
         this.direction = 1;
-        this.carrying = null; // word being carried
-        this.radius = 8;
+        this.carrying = null;
+        this.radius = 7;
         this.waitingTime = 0;
-        this.state = 'moving'; // moving, loading, unloading
+        this.state = 'moving';
     }
 
     update(deltaTime) {
         if (this.state === 'moving') {
             this.position += (this.speed * deltaTime) * this.direction;
             
-            // Reverse at ends
             if (this.position >= 1) {
                 this.position = 1;
                 this.direction = -1;
@@ -519,7 +388,6 @@ class Train {
                 this.direction = 1;
             }
             
-            // Check for hub/station interactions
             this.checkInteractions();
         } else if (this.state === 'loading' || this.state === 'unloading') {
             this.waitingTime -= deltaTime;
@@ -532,51 +400,45 @@ class Train {
     checkInteractions() {
         const pos = getPointOnLine(this.line, this.position);
         
-        // Check hubs to pick up words
         if (!this.carrying) {
             for (let hub of hubs) {
                 if (distance(pos, hub) < 30 && hub.hasWord) {
                     this.carrying = hub.word;
                     hub.hasWord = false;
                     this.state = 'loading';
-                    this.waitingTime = 0.5;
+                    this.waitingTime = 0.3;
                     createParticles(hub.x, hub.y, '#ff6b6b');
                     return;
                 }
             }
         }
         
-        // Check stations to deliver words
         if (this.carrying) {
             for (let station of stations) {
-                // Skip if station is already satisfied or completed
                 if (station.satisfied || station.completed) continue;
                 
                 if (distance(pos, station) < 30 && station.word === this.carrying) {
-                    // Mark station as satisfied (starts 3-second success animation)
                     station.markSatisfied();
                     
                     this.carrying = null;
                     this.state = 'unloading';
-                    this.waitingTime = 0.5;
+                    this.waitingTime = 0.3;
                     
-                    // Award score based on remaining patience
                     score += Math.floor(station.patience) * 10;
-                    wordsDelivered++;
+                    wordsDeliveredInLevel++;
+                    totalWordsDelivered++;
                     
-                    // Create success particles
-                    createParticles(station.x, station.y, '#ffd700'); // Gold particles
-                    createParticles(station.x, station.y, '#6bcf7f'); // Green particles
+                    createParticles(station.x, station.y, '#ffd700');
+                    createParticles(station.x, station.y, '#6bcf7f');
                     
-                    // Replenish hub
                     for (let hub of hubs) {
                         if (hub.word === station.word) {
                             hub.hasWord = true;
                         }
                     }
                     
-                    if (wordsDelivered >= totalWords) {
-                        gameWin();
+                    if (wordsDeliveredInLevel >= 4) {
+                        levelComplete();
                     }
                     return;
                 }
@@ -587,23 +449,21 @@ class Train {
     draw(ctx) {
         const pos = getPointOnLine(this.line, this.position);
         
-        // Train body
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = '#fff';
         ctx.fill();
         
         ctx.strokeStyle = this.line.color;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2;
         ctx.stroke();
         
-        // Carrying indicator
         if (this.carrying) {
             ctx.fillStyle = '#6bcf7f';
-            ctx.font = 'bold 10px Arial';
+            ctx.font = 'bold 9px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(this.carrying.substring(0, 3), pos.x, pos.y - 15);
+            ctx.fillText(this.carrying.substring(0, 3), pos.x, pos.y - 12);
         }
     }
 }
@@ -636,36 +496,40 @@ class Particle {
 }
 
 function createParticles(x, y, color) {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 8; i++) {
         particles.push(new Particle(x, y, color));
     }
 }
 
-// Initialize game entities
-function initGame() {
+// Initialize level - clean map with only 4 word-sentence pairs
+function initLevel(level) {
+    currentLevel = level;
+    currentVocabData = levelData[level - 1]; // Get 4 words for this level
+    wordsDeliveredInLevel = 0;
+    
+    // Clear the map completely
     hubs = [];
     stations = [];
     lines = [];
     trains = [];
     particles = [];
-    score = 0;
-    wordsDelivered = 0;
+    hoveredStation = null;
     
-    // Create hubs on left side
-    const hubX = canvas.width * 0.15;
-    const hubSpacing = canvas.height / (vocabData.length + 1);
+    // Create exactly 4 hubs on left side - spacious layout
+    const hubX = canvas.width * 0.2;
+    const hubSpacing = canvas.height / 5;
     
-    vocabData.forEach((data, i) => {
+    currentVocabData.forEach((data, i) => {
         const y = hubSpacing * (i + 1);
         hubs.push(new Hub(hubX, y, data.word, i));
     });
     
-    // Create stations on right side (shuffled order)
-    const stationX = canvas.width * 0.85;
-    const shuffledIndices = [...Array(vocabData.length).keys()].sort(() => Math.random() - 0.5);
+    // Create exactly 4 stations on right side (shuffled order for challenge)
+    const stationX = canvas.width * 0.8;
+    const shuffledIndices = [...Array(4).keys()].sort(() => Math.random() - 0.5);
     
     shuffledIndices.forEach((originalIndex, i) => {
-        const data = vocabData[originalIndex];
+        const data = currentVocabData[originalIndex];
         const y = hubSpacing * (i + 1);
         stations.push(new Station(stationX, y, data.word, data.sentence, originalIndex));
     });
@@ -682,22 +546,18 @@ canvas.addEventListener('mousedown', (e) => {
     mouse.y = e.clientY - rect.top;
     mouse.isDown = true;
     
-    // Check if clicking on a hub or existing line
     let startPoint = null;
     let startColor = null;
     
-    // Check hubs
     for (let hub of hubs) {
         if (distance(mouse, hub) < hub.radius + 10) {
             startPoint = { x: hub.x, y: hub.y };
-            // Find or assign color
             const existingLine = lines.find(l => l.hubs.has(hub.id));
             startColor = existingLine ? existingLine.color : lineColors[lines.length % lineColors.length];
             break;
         }
     }
     
-    // Check stations (exclude satisfied/completed stations)
     if (!startPoint) {
         for (let station of stations) {
             if (distance(mouse, station) < station.radius + 10 && !station.completed && !station.satisfied) {
@@ -709,7 +569,6 @@ canvas.addEventListener('mousedown', (e) => {
         }
     }
     
-    // Check existing lines for extension
     if (!startPoint) {
         for (let line of lines) {
             for (let point of line.points) {
@@ -750,7 +609,6 @@ canvas.addEventListener('mouseup', (e) => {
     const endX = e.clientX - rect.left;
     const endY = e.clientY - rect.top;
     
-    // Check if ending on a valid target
     let endPoint = null;
     let endHub = null;
     let endStation = null;
@@ -776,20 +634,16 @@ canvas.addEventListener('mouseup', (e) => {
     if (endPoint && draggingLine.points.length > 0) {
         const startPoint = draggingLine.points[0];
         
-        // Don't connect to same point
         if (distance(startPoint, endPoint) > 10) {
             if (draggingLine.extending && draggingLine.line) {
-                // Extend existing line
                 draggingLine.line.addPoint(endPoint.x, endPoint.y);
                 if (endHub) draggingLine.line.hubs.add(endHub.id);
                 if (endStation) draggingLine.line.stations.add(endStation.id);
             } else {
-                // Create new line
                 const newLine = new Line(draggingLine.color);
                 newLine.addPoint(startPoint.x, startPoint.y);
                 newLine.addPoint(endPoint.x, endPoint.y);
                 
-                // Track connected entities
                 for (let hub of hubs) {
                     if (distance(startPoint, hub) < 30 || distance(endPoint, hub) < 30) {
                         newLine.hubs.add(hub.id);
@@ -802,8 +656,6 @@ canvas.addEventListener('mouseup', (e) => {
                 }
                 
                 lines.push(newLine);
-                
-                // Spawn a train on this line
                 trains.push(new Train(newLine));
             }
             
@@ -832,32 +684,24 @@ function gameLoop(currentTime) {
 }
 
 function update(deltaTime) {
-    // Limit deltaTime to prevent large jumps
     deltaTime = Math.min(deltaTime, 0.1);
     
-    // Update hubs
+    hoveredStation = null;
+    
     hubs.forEach(hub => hub.update(deltaTime));
-    
-    // Update stations (satisfied stations continue animating)
     stations.forEach(station => station.update(deltaTime));
-    
-    // Remove completed stations after fade out (optional optimization)
-    // stations = stations.filter(s => !s.completed);
-    
-    // Update trains
     trains.forEach(train => train.update(deltaTime));
     
-    // Update particles
     particles = particles.filter(p => {
         p.update(deltaTime);
         return p.life > 0;
     });
     
     updateUI();
+    updateInfoPanel();
 }
 
 function render() {
-    // Clear canvas
     ctx.fillStyle = '#0f0f1a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
@@ -880,13 +724,11 @@ function render() {
         ctx.stroke();
     }
     
-    // Draw lines
     lines.forEach(line => line.draw(ctx));
     
-    // Draw dragging line
     if (draggingLine && draggingLine.points.length > 0) {
         ctx.strokeStyle = draggingLine.color;
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 5;
         ctx.lineCap = 'round';
         ctx.setLineDash([10, 5]);
         
@@ -903,41 +745,96 @@ function render() {
         ctx.setLineDash([]);
     }
     
-    // Draw hubs
     hubs.forEach(hub => hub.draw(ctx));
     
-    // Draw stations (draw satisfied ones last so they appear on top)
     const normalStations = stations.filter(s => !s.satisfied && !s.completed);
     const satisfiedStations = stations.filter(s => s.satisfied && !s.completed);
     
     normalStations.forEach(station => station.draw(ctx));
     satisfiedStations.forEach(station => station.draw(ctx));
     
-    // Draw trains
     trains.forEach(train => train.draw(ctx));
-    
-    // Draw particles
     particles.forEach(p => p.draw(ctx));
 }
 
 function updateUI() {
     document.getElementById('score').textContent = score;
-    document.getElementById('delivered').textContent = `${wordsDelivered}/${totalWords}`;
+    document.getElementById('level').textContent = `${currentLevel}/${totalLevels}`;
+    document.getElementById('delivered').textContent = `${wordsDeliveredInLevel}/4`;
     document.getElementById('lines').textContent = lines.length;
+    document.getElementById('totalProgress').textContent = `${totalWordsDelivered}/20`;
+    
+    // Update progress bar
+    const progressPercent = (totalWordsDelivered / 20) * 100;
+    document.getElementById('progressBar').style.width = `${progressPercent}%`;
+}
+
+function updateInfoPanel() {
+    const panel = document.getElementById('infoPanel');
+    const sentenceText = document.getElementById('sentenceText');
+    
+    if (hoveredStation && !hoveredStation.satisfied && !hoveredStation.completed) {
+        panel.style.opacity = '1';
+        // Show sentence with blank - NO answer hint displayed
+        sentenceText.textContent = hoveredStation.sentence;
+    } else {
+        panel.style.opacity = '0';
+    }
 }
 
 function startGame() {
     document.getElementById('startScreen').style.display = 'none';
     gameState = 'playing';
-    initGame();
+    currentLevel = 1;
+    score = 0;
+    totalWordsDelivered = 0;
+    initLevel(1);
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
+}
+
+function levelComplete() {
+    gameState = 'levelComplete';
+    
+    const summary = document.getElementById('levelSummary');
+    const levelWords = currentVocabData; // The 4 words from current level
+    
+    document.getElementById('completedLevelNum').textContent = currentLevel;
+    
+    let summaryHTML = '<h4>Words Learned in This Level:</h4><ul>';
+    levelWords.forEach(data => {
+        // Show the completed sentence with the word filled in
+        const completedSentence = data.sentence.replace('________', `<strong style="color: #ffd93d;">${data.word}</strong>`);
+        summaryHTML += `<li><strong>${data.word}</strong>: ${completedSentence}</li>`;
+    });
+    summaryHTML += '</ul>';
+    
+    summary.innerHTML = summaryHTML;
+    
+    document.getElementById('levelCompleteScreen').style.display = 'flex';
+}
+
+function nextLevel() {
+    document.getElementById('levelCompleteScreen').style.display = 'none';
+    
+    // Check if all 5 levels are complete
+    if (currentLevel >= totalLevels) {
+        // All 20 words (5 levels x 4 words) completed
+        gameWin();
+    } else {
+        // Advance to next level with new set of 4 words
+        gameState = 'playing';
+        initLevel(currentLevel + 1);
+    }
 }
 
 function restartGame() {
     document.getElementById('gameOverScreen').style.display = 'none';
     gameState = 'playing';
-    initGame();
+    currentLevel = 1;
+    score = 0;
+    totalWordsDelivered = 0;
+    initLevel(1);
 }
 
 function gameOver() {
@@ -950,8 +847,8 @@ function gameOver() {
 
 function gameWin() {
     gameState = 'win';
-    document.getElementById('gameOverTitle').textContent = 'VICTORY!';
-    document.getElementById('gameOverMessage').textContent = 'You delivered all words successfully!';
+    document.getElementById('gameOverTitle').textContent = '🎉 VICTORY!';
+    document.getElementById('gameOverMessage').textContent = `You completed all ${totalLevels} levels and mastered 20 vocabulary words!`;
     document.getElementById('finalScore').textContent = `Final Score: ${score}`;
     document.getElementById('gameOverScreen').style.display = 'flex';
 }

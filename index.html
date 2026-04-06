@@ -43,7 +43,7 @@
             top: 0;
             left: 0;
             right: 0;
-            padding: 20px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
@@ -52,24 +52,59 @@
 
         .stat-box {
             background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 8px;
             border: 2px solid #00d4ff;
             pointer-events: auto;
+            min-width: 80px;
+            text-align: center;
         }
 
         .stat-box h3 {
-            font-size: 14px;
+            font-size: 11px;
             color: #00d4ff;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .stat-box p {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
         }
 
-        #startScreen, #gameOverScreen {
+        #infoPanel {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #ffd93d;
+            border-radius: 12px;
+            padding: 20px 25px;
+            max-width: 700px;
+            width: 90%;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        #infoPanel h4 {
+            color: #ffd93d;
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #sentenceText {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #fff;
+        }
+
+        #startScreen, #gameOverScreen, #levelCompleteScreen {
             position: absolute;
             top: 0;
             left: 0;
@@ -83,13 +118,13 @@
             z-index: 100;
         }
 
-        #gameOverScreen {
+        #gameOverScreen, #levelCompleteScreen {
             display: none;
         }
 
         h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
+            font-size: 42px;
+            margin-bottom: 15px;
             background: linear-gradient(45deg, #00d4ff, #ff6b6b, #ffd93d, #6bcf7f);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -98,30 +133,32 @@
         }
 
         .subtitle {
-            font-size: 18px;
+            font-size: 16px;
             color: #888;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             text-align: center;
-            max-width: 600px;
-            line-height: 1.6;
+            max-width: 500px;
+            line-height: 1.5;
         }
 
         .instructions {
             background: rgba(255, 255, 255, 0.05);
             padding: 20px 30px;
             border-radius: 10px;
-            margin-bottom: 30px;
-            max-width: 500px;
+            margin-bottom: 25px;
+            max-width: 450px;
         }
 
         .instructions h3 {
             color: #00d4ff;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            font-size: 14px;
         }
 
         .instructions ul {
             list-style: none;
-            line-height: 2;
+            line-height: 1.8;
+            font-size: 13px;
         }
 
         .instructions li:before {
@@ -130,8 +167,8 @@
         }
 
         button {
-            padding: 15px 40px;
-            font-size: 20px;
+            padding: 14px 35px;
+            font-size: 18px;
             background: linear-gradient(45deg, #00d4ff, #0099cc);
             border: none;
             border-radius: 30px;
@@ -139,6 +176,7 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             pointer-events: auto;
+            font-weight: bold;
         }
 
         button:hover {
@@ -146,18 +184,67 @@
             box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
         }
 
+        button.secondary {
+            background: linear-gradient(45deg, #6bcf7f, #4caf50);
+            margin-left: 10px;
+        }
+
         #finalScore {
-            font-size: 36px;
-            margin: 20px 0;
+            font-size: 32px;
+            margin: 15px 0;
+            color: #ffd93d;
+        }
+
+        .level-badge {
+            background: linear-gradient(45deg, #ffd93d, #ff8c42);
+            color: #1a1a2e;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        #levelSummary {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            max-width: 600px;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        #levelSummary h4 {
+            color: #6bcf7f;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        #levelSummary ul {
+            list-style: none;
+        }
+
+        #levelSummary li {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            line-height: 1.5;
+            font-size: 13px;
+        }
+
+        #levelSummary li strong {
             color: #ffd93d;
         }
 
         .legend {
             position: absolute;
-            bottom: 20px;
+            bottom: 15px;
             left: 20px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
+            padding: 12px 15px;
             border-radius: 8px;
             border: 1px solid #333;
         }
@@ -165,15 +252,75 @@
         .legend-item {
             display: flex;
             align-items: center;
-            margin: 5px 0;
+            margin: 4px 0;
+            font-size: 11px;
+        }
+
+        .legend-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 12px;
         }
 
-        .legend-color {
-            width: 20px;
-            height: 4px;
-            margin-right: 10px;
-            border-radius: 2px;
+        .legend-circle {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff6b6b;
+        }
+
+        .legend-bubble {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ffd93d;
+            position: relative;
+        }
+
+        .legend-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            right: -2px;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 6px solid #ffd93d;
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .progress-bar h4 {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .progress-fill {
+            width: 150px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #6bcf7f, #00d4ff);
+            transition: width 0.3s ease;
         }
     </style>
 </head>
@@ -183,48 +330,73 @@
         
         <div id="ui">
             <div class="stat-box">
-                <h3>SCORE</h3>
+                <h3>Level</h3>
+                <p id="level">1/5</p>
+            </div>
+            <div class="stat-box">
+                <h3>Score</h3>
                 <p id="score">0</p>
             </div>
             <div class="stat-box">
-                <h3>DELIVERED</h3>
-                <p id="delivered">0/20</p>
+                <h3>Delivered</h3>
+                <p id="delivered">0/4</p>
             </div>
             <div class="stat-box">
-                <h3>LINES</h3>
+                <h3>Lines</h3>
                 <p id="lines">0</p>
             </div>
         </div>
 
+        <div id="infoPanel">
+            <h4>📖 Sentence</h4>
+            <p id="sentenceText">Hover over a station to see the sentence...</p>
+        </div>
+
         <div class="legend">
             <div class="legend-item">
-                <div class="legend-color" style="background: #ff6b6b;"></div>
-                <span>Dictionary Hub (Word Source)</span>
+                <div class="legend-icon"><div class="legend-circle"></div></div>
+                <span>Word Hub</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color" style="background: #ffd93d;"></div>
-                <span>Sentence Station (Destination)</span>
+                <div class="legend-icon"><div class="legend-bubble"></div></div>
+                <span>Sentence Station (hover to reveal)</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color" style="background: #6bcf7f;"></div>
-                <span>Train with Word</span>
+                <div class="legend-icon">🚇</div>
+                <span>Train carrying word</span>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <h4>Overall Progress: <span id="totalProgress">0/20</span></h4>
+            <div class="progress-fill">
+                <div class="progress-fill-inner" id="progressBar" style="width: 0%"></div>
             </div>
         </div>
 
         <div id="startScreen">
             <h1>📚 VOCAB METRO</h1>
-            <p class="subtitle">Master English vocabulary by building transit lines to deliver words to their matching sentences!</p>
+            <p class="subtitle">Master English vocabulary through 5 levels of transit puzzles!<br>Build lines, deliver words, and learn in context.</p>
             <div class="instructions">
                 <h3>How to Play:</h3>
                 <ul>
-                    <li>Click and drag from Dictionary Hubs to Sentence Stations</li>
-                    <li>Trains will automatically run on your lines</li>
-                    <li>Trains pick up words from Hubs and deliver to matching Stations</li>
-                    <li>Watch the patience timers on Stations - don't let them run out!</li>
-                    <li>Deliver all 20 words to win!</li>
+                    <li>5 levels, 4 words per level (20 words total)</li>
+                    <li>Click and drag from Word Hubs to Sentence Stations</li>
+                    <li>Hover over stations to see the fill-in-the-blank sentence</li>
+                    <li>Match the correct word to complete each sentence</li>
+                    <li>Complete all 4 matches to advance to the next level</li>
+                    <li>~30 minute gameplay - take your time and strategize!</li>
                 </ul>
             </div>
             <button onclick="startGame()">START GAME</button>
+        </div>
+
+        <div id="levelCompleteScreen">
+            <div class="level-badge">✨ Level <span id="completedLevelNum">1</span> Complete!</div>
+            <h1>Great Job!</h1>
+            <p class="subtitle">You've mastered these vocabulary words:</p>
+            <div id="levelSummary"></div>
+            <button onclick="nextLevel()">NEXT LEVEL ➜</button>
         </div>
 
         <div id="gameOverScreen">
