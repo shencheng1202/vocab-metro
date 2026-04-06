@@ -34,9 +34,9 @@ const lineColors = [
     '#ff6b9d'  // Pink
 ];
 
-// Default vocabulary data (20 words) with detailed etymology hints
-// This can be overridden by user-uploaded custom vocabulary
-let allVocabData = [
+// HARDCODED DEFAULT: Default vocabulary data (20 words) with detailed etymology hints
+// This is hardcoded to avoid CORS issues when running as a static file
+const defaultVocabData = [
     { word: "Torment", sentence: "The guilt of his past mistakes continued to ________ him for decades, even after he apologized to those he had hurt and spent his life trying to make amends.", hint: "torquere (to twist) + ment (noun suffix)" },
     { word: "Indulgent", sentence: "My grandmother is always ________ with her grandchildren, spoiling them with sweet treats and letting them stay up late whenever they visit her countryside home.", hint: "in (into) + dulge (to sweeten) + ent (adjective suffix)" },
     { word: "Abandon", sentence: "When she realized the mission was impossible and all hope was lost, she chose to ________ the project that had consumed her years of hard work and dedication.", hint: "a (intensive) + bandon (to bind)" },
@@ -59,17 +59,10 @@ let allVocabData = [
     { word: "Extraordinary", sentence: "The young musician gave an ________ performance at the concert hall, playing the piano with a passion and skill that left the entire audience standing and cheering.", hint: "extra (beyond) + ordinary (common), from Latin ordinarius (regular)" }
 ];
 
-// Level data - 4 words per level, 5 levels total = 20 words
-// Each level is completely independent with its own 4 word-sentence pairs
-const levelData = [
-    allVocabData.slice(0, 4),   // Level 1: words 0-3
-    allVocabData.slice(4, 8),   // Level 2: words 4-7
-    allVocabData.slice(8, 12),  // Level 3: words 8-11
-    allVocabData.slice(12, 16), // Level 4: words 12-15
-    allVocabData.slice(16, 20)  // Level 5: words 16-19
-];
+// Active vocabulary data - starts with default, can be overridden by upload
+let allVocabData = [...defaultVocabData];
 
-// Current level vocabulary - dynamically generated based on uploaded data
+// Current level vocabulary - dynamically generated based on active data
 let currentVocabData = [];
 
 // Dynamic level data - recalculated based on vocabulary size
@@ -755,11 +748,13 @@ function handleFileUpload(event) {
         }
         
         // Override default vocabulary with custom data
-        allVocabData = parsedData;
+        allVocabData = [...parsedData]; // Create a copy to avoid reference issues
         
         // Generate dynamic level data
         levelData = generateLevelData(allVocabData);
         totalLevels = levelData.length;
+        
+        console.log(`Loaded ${parsedData.length} words, ${totalLevels} levels`);
         
         statusEl.textContent = `✅ Loaded ${parsedData.length} words, ${totalLevels} levels`;
         statusEl.className = '';
@@ -1205,6 +1200,16 @@ function drawEtymologyHintBar(ctx) {
 }
 
 function startGame() {
+    // CRITICAL FIX: Ensure default data is loaded if no custom data uploaded
+    // This prevents the game from failing when clicking 'PLAY DEFAULT DATA'
+    if (!allVocabData || allVocabData.length === 0) {
+        allVocabData = [...defaultVocabData];
+    }
+    
+    // Always regenerate level data from current allVocabData
+    levelData = generateLevelData(allVocabData);
+    totalLevels = levelData.length;
+    
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('uploadStatus').textContent = ''; // Clear upload status
     gameState = 'playing';
@@ -1214,12 +1219,6 @@ function startGame() {
     wordsDeliveredInLevel = 0;
     globalGameTime = maxGameTime; // Reset global timer to 30 minutes
     penaltyTexts = []; // Clear any penalty texts
-    
-    // If using default data, ensure levelData is set
-    if (levelData.length === 0) {
-        levelData = generateLevelData(allVocabData);
-        totalLevels = levelData.length;
-    }
     
     // Clear any existing canvas elements
     hubs = [];
