@@ -1199,15 +1199,22 @@ function drawEtymologyHintBar(ctx) {
 }
 
 function startGame() {
+    console.log('startGame called');
+    
     // CRITICAL FIX: Ensure default data is loaded if no custom data uploaded
     // This prevents the game from failing when clicking 'PLAY DEFAULT DATA'
     if (!allVocabData || allVocabData.length === 0) {
+        console.log('Loading default vocab data');
         allVocabData = [...defaultVocabData];
     }
+    
+    console.log('allVocabData length:', allVocabData.length);
     
     // Always regenerate level data from current allVocabData
     levelData = generateLevelData(allVocabData);
     totalLevels = levelData.length;
+    
+    console.log('Generated levels:', totalLevels);
     
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('uploadStatus').textContent = ''; // Clear upload status
