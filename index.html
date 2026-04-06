@@ -189,6 +189,59 @@
             margin-left: 10px;
         }
 
+        button.upload-btn {
+            background: linear-gradient(45deg, #ffd93d, #ff8c42);
+            margin-top: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button.upload-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 217, 61, 0.5);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 14px 35px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #ffd93d, #ff8c42);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .file-label:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 217, 61, 0.5);
+        }
+
+        #uploadStatus {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #6bcf7f;
+            min-height: 20px;
+        }
+
+        #uploadStatus.error {
+            color: #ff6b6b;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
         #finalScore {
             font-size: 32px;
             margin: 15px 0;
@@ -278,20 +331,23 @@
 
         <div id="startScreen">
             <h1>📚 VOCAB METRO</h1>
-            <p class="subtitle">Master English vocabulary through 5 levels of transit puzzles!<br>Build lines, deliver words, and learn in context.</p>
+            <p class="subtitle">Master English vocabulary through transit puzzles!<br>Build lines, deliver words, and learn in context.</p>
             <div class="instructions">
                 <h3>How to Play:</h3>
                 <ul>
-                    <li>5 levels, 4 words per level (20 words total)</li>
+                    <li>4 words per level - match words to sentences</li>
                     <li>Click and drag from Word Hubs to Sentence Stations</li>
                     <li>Hover over stations to see the fill-in-the-blank sentence</li>
-                    <li>Match the correct word to complete each sentence</li>
                     <li>⚠️ <strong>Wrong match = -3 minutes penalty!</strong></li>
-                    <li>Complete all 4 matches to advance to the next level</li>
-                    <li>~30 minute gameplay - strategize carefully!</li>
+                    <li>Use default vocabulary or upload your own!</li>
                 </ul>
             </div>
-            <button onclick="startGame()">START GAME</button>
+            <div class="menu-buttons">
+                <button onclick="startGame()">▶ PLAY DEFAULT DATA</button>
+                <label for="fileInput" class="file-label">📁 CUSTOM LEVEL: UPLOAD TXT</label>
+                <input type="file" id="fileInput" accept=".txt" onchange="handleFileUpload(event)">
+                <div id="uploadStatus"></div>
+            </div>
         </div>
 
         <div id="levelCompleteScreen">
@@ -310,6 +366,6 @@
         </div>
     </div>
 
-    <script src="game.js?v=6"></script>
+    <script src="game.js?v=7"></script>
 </body>
 </html>

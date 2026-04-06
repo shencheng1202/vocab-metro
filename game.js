@@ -34,8 +34,9 @@ const lineColors = [
     '#ff6b9d'  // Pink
 ];
 
-// Full vocabulary data (20 words) with detailed etymology hints
-const allVocabData = [
+// Default vocabulary data (20 words) with detailed etymology hints
+// This can be overridden by user-uploaded custom vocabulary
+let allVocabData = [
     { word: "Torment", sentence: "The guilt of his past mistakes continued to ________ him for decades, even after he apologized to those he had hurt and spent his life trying to make amends.", hint: "torquere (to twist) + ment (noun suffix)" },
     { word: "Indulgent", sentence: "My grandmother is always ________ with her grandchildren, spoiling them with sweet treats and letting them stay up late whenever they visit her countryside home.", hint: "in (into) + dulge (to sweeten) + ent (adjective suffix)" },
     { word: "Abandon", sentence: "When she realized the mission was impossible and all hope was lost, she chose to ________ the project that had consumed her years of hard work and dedication.", hint: "a (intensive) + bandon (to bind)" },
@@ -68,8 +69,12 @@ const levelData = [
     allVocabData.slice(16, 20)  // Level 5: words 16-19
 ];
 
-// Current level vocabulary
+// Current level vocabulary - dynamically generated based on uploaded data
 let currentVocabData = [];
+
+// Dynamic level data - recalculated based on vocabulary size
+let levelData = [];
+let totalLevels = 5; // Default, will be recalculated for custom data
 
 // Game entities
 let hubs = [];
@@ -505,8 +510,9 @@ class Train {
                             hubs.splice(hubIndex, 1);
                         }
                         
-                        // Check if level is complete (all 4 words delivered)
-                        if (wordsDeliveredInLevel >= 4) {
+                        // Check if level is complete (all words in current level delivered)
+                        // Dynamic: handles any number of words (1-4) in the final level
+                        if (wordsDeliveredInLevel >= currentVocabData.length) {
                             // Clear all visual entities immediately
                             hubs = [];
                             stations = [];
@@ -682,10 +688,108 @@ function createPenaltyText(x, y, text) {
     penaltyTexts.push(new PenaltyText(x, y, text));
 }
 
-// Initialize level - clean map with only 4 word-sentence pairs
+// Parse uploaded text file into vocabulary data
+function parseVocabFile(text) {
+    const vocabData = [];
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+    
+    for (const line of lines) {
+        // Parse format: "Word: XXX, Sentence: YYY, Hint: ZZZ"
+        const wordMatch = line.match(/Word:\s*([^,]+)/i);
+        const sentenceMatch = line.match(/Sentence:\s*(.+?)(?=,\s*Hint:|$)/i);
+        const hintMatch = line.match(/Hint:\s*(.+)$/i);
+        
+        if (wordMatch && sentenceMatch) {
+            vocabData.push({
+                word: wordMatch[1].trim(),
+                sentence: sentenceMatch[1].trim(),
+                hint: hintMatch ? hintMatch[1].trim() : 'No hint available'
+            });
+        }
+    }
+    
+    return vocabData;
+}
+
+// Generate level data dynamically based on vocabulary size
+function generateLevelData(vocabArray) {
+    const levels = [];
+    const wordsPerLevel = 4;
+    
+    for (let i = 0; i < vocabArray.length; i += wordsPerLevel) {
+        levels.push(vocabArray.slice(i, i + wordsPerLevel));
+    }
+    
+    return levels;
+}
+
+// Handle file upload from user
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    const statusEl = document.getElementById('uploadStatus');
+    
+    if (!file) return;
+    
+    if (!file.name.endsWith('.txt')) {
+        statusEl.textContent = '❌ Please upload a .txt file';
+        statusEl.className = 'error';
+        return;
+    }
+    
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const parsedData = parseVocabFile(text);
+        
+        if (parsedData.length === 0) {
+            statusEl.textContent = '❌ No valid vocabulary found in file';
+            statusEl.className = 'error';
+            return;
+        }
+        
+        if (parsedData.length < 4) {
+            statusEl.textContent = '❌ Need at least 4 words for a level';
+            statusEl.className = 'error';
+            return;
+        }
+        
+        // Override default vocabulary with custom data
+        allVocabData = parsedData;
+        
+        // Generate dynamic level data
+        levelData = generateLevelData(allVocabData);
+        totalLevels = levelData.length;
+        
+        statusEl.textContent = `✅ Loaded ${parsedData.length} words, ${totalLevels} levels`;
+        statusEl.className = '';
+        
+        // Auto-start game after short delay
+        setTimeout(() => {
+            startGame();
+        }, 1000);
+    };
+    
+    reader.onerror = function() {
+        statusEl.textContent = '❌ Error reading file';
+        statusEl.className = 'error';
+    };
+    
+    reader.readAsText(file);
+}
+
+// Initialize level - clean map with dynamic number of word-sentence pairs
 function initLevel(level) {
     currentLevel = level;
-    currentVocabData = levelData[level - 1]; // Get 4 words for this level
+    currentVocabData = levelData[level - 1]; // Get words for this level
+    
+    // Safety check: ensure currentVocabData exists
+    if (!currentVocabData || currentVocabData.length === 0) {
+        console.error('No vocabulary data for level', level);
+        gameWin();
+        return;
+    }
+    
     wordsDeliveredInLevel = 0;
     
     // Clear the map completely
@@ -696,18 +800,18 @@ function initLevel(level) {
     particles = [];
     hoveredStation = null;
     
-    // Create exactly 4 hubs on left side - spacious layout
+    // Create hubs on left side - spacious layout (adapts to any number of words)
     const hubX = canvas.width * 0.2;
-    const hubSpacing = canvas.height / 5;
+    const hubSpacing = canvas.height / (currentVocabData.length + 1);
     
     currentVocabData.forEach((data, i) => {
         const y = hubSpacing * (i + 1);
         hubs.push(new Hub(hubX, y, data.word, i));
     });
     
-    // Create exactly 4 stations on right side (shuffled order for challenge)
+    // Create stations on right side (shuffled order for challenge)
     const stationX = canvas.width * 0.8;
-    const shuffledIndices = [...Array(4).keys()].sort(() => Math.random() - 0.5);
+    const shuffledIndices = [...Array(currentVocabData.length).keys()].sort(() => Math.random() - 0.5);
     
     shuffledIndices.forEach((originalIndex, i) => {
         const data = currentVocabData[originalIndex];
@@ -729,12 +833,22 @@ canvas.addEventListener('mousedown', (e) => {
     
     let startPoint = null;
     let startColor = null;
+    let selectedHub = null;
     
+    // STRICT 1-TO-1 RULE: Check if hub already has an active line
     for (let hub of hubs) {
         if (distance(mouse, hub) < hub.radius + 10) {
-            startPoint = { x: hub.x, y: hub.y };
+            // Check if this hub already has an active line
             const existingLine = lines.find(l => l.hubs.has(hub.id));
-            startColor = existingLine ? existingLine.color : lineColors[lines.length % lineColors.length];
+            if (existingLine) {
+                // Hub already has a line - BLOCK new drawing attempt
+                // Player must wait for current train to finish
+                return;
+            }
+            // Hub is free - allow drawing
+            startPoint = { x: hub.x, y: hub.y };
+            selectedHub = hub;
+            startColor = lineColors[lines.length % lineColors.length];
             break;
         }
     }
@@ -768,7 +882,7 @@ canvas.addEventListener('mousedown', (e) => {
         draggingLine = {
             points: [startPoint],
             color: startColor,
-            fromHub: hubs.some(h => distance(startPoint, h) < 30)
+            fromHub: selectedHub !== null
         };
     }
 });
@@ -969,7 +1083,10 @@ function updateUI() {
     
     if (scoreEl) scoreEl.textContent = score;
     if (levelEl) levelEl.textContent = `${currentLevel}/${totalLevels}`;
-    if (deliveredEl) deliveredEl.textContent = `${wordsDeliveredInLevel}/4`;
+    if (deliveredEl) {
+        const totalInLevel = currentVocabData ? currentVocabData.length : 4;
+        deliveredEl.textContent = `${wordsDeliveredInLevel}/${totalInLevel}`;
+    }
     if (linesEl) linesEl.textContent = lines.length;
     if (totalProgressEl) totalProgressEl.textContent = `${totalWordsDelivered}/20`;
     
@@ -995,6 +1112,13 @@ function updateUI() {
             timerElement.style.color = '#6bcf7f';
         }
     }
+    
+    // Update total progress display
+    const totalWords = allVocabData.length;
+    const totalProgressEl = document.getElementById('totalProgress');
+    if (totalProgressEl) {
+        totalProgressEl.textContent = `${totalWordsDelivered}/${totalWords}`;
+    }
 }
 
 function updateInfoPanel() {
@@ -1014,7 +1138,9 @@ function updateInfoPanel() {
 function drawEtymologyHintBar(ctx) {
     if (gameState !== 'playing' || !currentVocabData || currentVocabData.length === 0) return;
     
-    const barHeight = 110;
+    const wordCount = currentVocabData.length;
+    // Dynamic height based on word count
+    const barHeight = wordCount <= 2 ? 60 : (wordCount <= 4 ? 90 : 110);
     const barY = canvas.height - barHeight - 10;
     const padding = 20;
     const availableWidth = canvas.width - padding * 2;
@@ -1035,10 +1161,10 @@ function drawEtymologyHintBar(ctx) {
     ctx.textBaseline = 'top';
     ctx.fillText('ETYMOLOGY HINTS', canvas.width / 2, barY + 6);
     
-    // Calculate layout for 4 hints (2 per row)
+    // Dynamic layout: 2 columns, rows based on word count
     const colWidth = availableWidth / 2;
-    const rowHeight = 40;
-    const startY = barY + 28;
+    const rowHeight = wordCount <= 2 ? 25 : 35;
+    const startY = barY + 25;
     
     ctx.fillStyle = '#fff';
     ctx.font = '11px Arial';
@@ -1080,12 +1206,28 @@ function drawEtymologyHintBar(ctx) {
 
 function startGame() {
     document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('uploadStatus').textContent = ''; // Clear upload status
     gameState = 'playing';
     currentLevel = 1;
     score = 0;
     totalWordsDelivered = 0;
+    wordsDeliveredInLevel = 0;
     globalGameTime = maxGameTime; // Reset global timer to 30 minutes
     penaltyTexts = []; // Clear any penalty texts
+    
+    // If using default data, ensure levelData is set
+    if (levelData.length === 0) {
+        levelData = generateLevelData(allVocabData);
+        totalLevels = levelData.length;
+    }
+    
+    // Clear any existing canvas elements
+    hubs = [];
+    stations = [];
+    lines = [];
+    trains = [];
+    particles = [];
+    
     initLevel(1);
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
@@ -1095,7 +1237,7 @@ function levelComplete() {
     gameState = 'levelComplete';
     
     const summary = document.getElementById('levelSummary');
-    const levelWords = currentVocabData; // The 4 words from current level
+    const levelWords = currentVocabData; // Words from current level
     
     document.getElementById('completedLevelNum').textContent = currentLevel;
     
@@ -1115,12 +1257,12 @@ function levelComplete() {
 function nextLevel() {
     document.getElementById('levelCompleteScreen').style.display = 'none';
     
-    // Check if all 5 levels are complete
+    // Check if all levels are complete
     if (currentLevel >= totalLevels) {
-        // All 20 words (5 levels x 4 words) completed
+        // All words completed - show victory screen
         gameWin();
     } else {
-        // Advance to next level with new set of 4 words
+        // Advance to next level with new set of words
         gameState = 'playing';
         initLevel(currentLevel + 1);
     }
@@ -1132,8 +1274,17 @@ function restartGame() {
     currentLevel = 1;
     score = 0;
     totalWordsDelivered = 0;
+    wordsDeliveredInLevel = 0;
     globalGameTime = maxGameTime; // Reset global timer
     penaltyTexts = []; // Clear penalty texts
+    
+    // Clear all canvas elements
+    hubs = [];
+    stations = [];
+    lines = [];
+    trains = [];
+    particles = [];
+    
     initLevel(1);
 }
 
