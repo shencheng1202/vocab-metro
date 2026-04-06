@@ -483,17 +483,22 @@ class Train {
                             }
                         }
                         
-                        // DESTROY: Remove the line and train after EVERY delivery attempt
+                        // CORRECT delivery - TOTAL CLEANUP: Destroy line, train, AND hub
+                        // This happens regardless of any previous incorrect attempts
+                        
+                        // DESTROY: Remove the transit line
                         const lineIndex = lines.indexOf(this.line);
                         if (lineIndex > -1) {
                             lines.splice(lineIndex, 1);
                         }
+                        
+                        // DESTROY: Remove the train
                         const trainIndex = trains.indexOf(this);
                         if (trainIndex > -1) {
                             trains.splice(trainIndex, 1);
                         }
                         
-                        // DESTROY: Remove the hub that delivered this word
+                        // DESTROY: Remove the Word Hub (yellow ball)
                         const hubIndex = hubs.findIndex(h => h.word === station.word);
                         if (hubIndex > -1) {
                             hubs.splice(hubIndex, 1);
@@ -513,7 +518,8 @@ class Train {
                         }
                         return;
                     } else {
-                        // INCORRECT delivery - apply penalty
+                        // INCORRECT delivery - apply penalty AND destroy line only
+                        // Word Hub and Station remain on the map
                         this.handleIncorrectDelivery(station);
                         return;
                     }
@@ -523,6 +529,9 @@ class Train {
     }
 
     handleIncorrectDelivery(station) {
+        // INCORRECT delivery: Apply penalty AND destroy line only
+        // Word Hub and Station remain on the map for retry
+        
         // Consume the incorrect word
         const wrongWord = this.carrying;
         this.carrying = null;
@@ -532,13 +541,13 @@ class Train {
         // STRICT: Apply exactly 3-minute (180 seconds) penalty to global timer
         globalGameTime = Math.max(0, globalGameTime - PENALTY_TIME);
         
-        // DESTROY: Remove the line connecting to this station
+        // DESTROY: Remove the transit line connecting hub to station
         const lineIndex = lines.indexOf(this.line);
         if (lineIndex > -1) {
             lines.splice(lineIndex, 1);
         }
         
-        // Remove this train
+        // DESTROY: Remove the train
         const trainIndex = trains.indexOf(this);
         if (trainIndex > -1) {
             trains.splice(trainIndex, 1);
