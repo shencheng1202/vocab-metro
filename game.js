@@ -1114,7 +1114,6 @@ function updateUI() {
     
     // Update total progress display
     const totalWords = allVocabData.length;
-    const totalProgressEl = document.getElementById('totalProgress');
     if (totalProgressEl) {
         totalProgressEl.textContent = `${totalWordsDelivered}/${totalWords}`;
     }
