@@ -7,7 +7,6 @@ const ctx = canvas.getContext('2d');
 // Game state
 let gameState = 'start'; // start, playing, levelComplete, gameover, win
 let currentLevel = 1;
-const totalLevels = 5;
 let score = 0;
 let wordsDeliveredInLevel = 0;
 let totalWordsDelivered = 0;
