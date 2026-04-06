@@ -14,7 +14,13 @@ let totalWordsDelivered = 0;
 let lines = [];
 let trains = [];
 let particles = [];
+let penaltyTexts = []; // Floating penalty text effects
 let hoveredStation = null;
+
+// Global game timer (30 minutes = 1800 seconds)
+let globalGameTime = 1800; // 30 minutes in seconds
+const maxGameTime = 1800;
+const PENALTY_TIME = 180; // 3 minutes penalty for incorrect delivery
 
 // Line colors (Mini Metro style)
 const lineColors = [
@@ -28,28 +34,28 @@ const lineColors = [
     '#ff6b9d'  // Pink
 ];
 
-// Full vocabulary data (20 words)
+// Full vocabulary data (20 words) with detailed etymology hints
 const allVocabData = [
-    { word: "Torment", sentence: "The guilt of his past mistakes continued to ________ him for decades, even after he apologized to those he had hurt and spent his life trying to make amends." },
-    { word: "Indulgent", sentence: "My grandmother is always ________ with her grandchildren, spoiling them with sweet treats and letting them stay up late whenever they visit her countryside home." },
-    { word: "Abandon", sentence: "When she realized the mission was impossible and all hope was lost, she chose to ________ the project that had consumed her years of hard work and dedication." },
-    { word: "Intrigue", sentence: "The mysterious note left on the doorstep, with its cryptic symbols and handwritten message, continued to ________ the detective long after she finished her initial investigation." },
-    { word: "Absurd", sentence: "It is ________ to believe that you can master a foreign language in just a week, no matter how many flashcards you memorize or apps you use." },
-    { word: "Rite", sentence: "In many cultures, a coming-of-age ________ marks the moment when a young person transitions from childhood to adulthood, often with special ceremonies and traditions." },
-    { word: "Catastrophe", sentence: "If we fail to address climate change and ignore the warnings of scientists, we will face an environmental ________ that will alter life on Earth for generations to come." },
-    { word: "Reverie", sentence: "She fell into a peaceful ________ while staring out the window at the falling snow, imagining herself walking through a quiet forest and listening to the crunch of snow under her boots." },
-    { word: "Perceptive", sentence: "The ________ teacher noticed the subtle change in her student's mood and realized he was struggling with anxiety, so she pulled him aside to talk and offer support." },
-    { word: "Contemplate", sentence: "Every morning, the elderly poet sits by the lake to ________ the meaning of life and draw inspiration from the quiet beauty of nature around him." },
-    { word: "Apparition", sentence: "As the moon rose over the old, abandoned castle, an eerie ________ appeared at the top of the tower, making the hikers freeze in fear and wonder if it was a trick of the light." },
-    { word: "Discipline", sentence: "To become a professional athlete, you must have unwavering ________, following a strict training schedule and making sacrifices that most people are unwilling to make." },
-    { word: "Trifle", sentence: "The argument started over a mere ________, a forgotten cup of coffee left on the counter, but it escalated quickly and left the two friends not speaking for weeks." },
-    { word: "Console", sentence: "I tried to ________ my best friend after she lost her beloved pet, sitting with her for hours and reminding her of all the happy memories they had shared together." },
-    { word: "Misfortune", sentence: "Though he faced great ________ when his business collapsed and he lost his home, he refused to give up and worked tirelessly to rebuild his life from the ground up." },
-    { word: "Enlighten", sentence: "The wise professor used real-life stories and thought-provoking questions to ________ her students about the complexities of human behavior and social justice." },
-    { word: "Tame", sentence: "It takes patience and gentle care to ________ a wild animal, as you must earn its trust slowly and never force it to do something it is afraid to attempt." },
-    { word: "Condemn", sentence: "The international community was quick to ________ the unjust act of violence, as it violated basic human rights and broke the peace treaty all nations had signed." },
-    { word: "Tedious", sentence: "Sorting through thousands of old documents and typing up handwritten notes is a ________ task, but it is essential for preserving the history of the small town." },
-    { word: "Extraordinary", sentence: "The young musician gave an ________ performance at the concert hall, playing the piano with a passion and skill that left the entire audience standing and cheering." }
+    { word: "Torment", sentence: "The guilt of his past mistakes continued to ________ him for decades, even after he apologized to those he had hurt and spent his life trying to make amends.", hint: "torquere (to twist) + ment (noun suffix)" },
+    { word: "Indulgent", sentence: "My grandmother is always ________ with her grandchildren, spoiling them with sweet treats and letting them stay up late whenever they visit her countryside home.", hint: "in (into) + dulge (to sweeten) + ent (adjective suffix)" },
+    { word: "Abandon", sentence: "When she realized the mission was impossible and all hope was lost, she chose to ________ the project that had consumed her years of hard work and dedication.", hint: "a (intensive) + bandon (to bind)" },
+    { word: "Intrigue", sentence: "The mysterious note left on the doorstep, with its cryptic symbols and handwritten message, continued to ________ the detective long after she finished her initial investigation.", hint: "in (into) + trigue (from French intriguer), root from Latin tricari (to trick)" },
+    { word: "Absurd", sentence: "It is ________ to believe that you can master a foreign language in just a week, no matter how many flashcards you memorize or apps you use.", hint: "ab (away) + surdus (deaf, stupid)" },
+    { word: "Rite", sentence: "In many cultures, a coming-of-age ________ marks the moment when a young person transitions from childhood to adulthood, often with special ceremonies and traditions.", hint: "from Latin ritus (custom, ceremony), no separable affixes" },
+    { word: "Catastrophe", sentence: "If we fail to address climate change and ignore the warnings of scientists, we will face an environmental ________ that will alter life on Earth for generations to come.", hint: "cata (down) + strophe (turn)" },
+    { word: "Reverie", sentence: "She fell into a peaceful ________ while staring out the window at the falling snow, imagining herself walking through a quiet forest and listening to the crunch of snow under her boots.", hint: "re (back) + ver (to wander) + ie (noun suffix)" },
+    { word: "Perceptive", sentence: "The ________ teacher noticed the subtle change in her student's mood and realized he was struggling with anxiety, so she pulled him aside to talk and offer support.", hint: "per (through) + capere (to take, seize) + tive (adjective suffix)" },
+    { word: "Contemplate", sentence: "Every morning, the elderly poet sits by the lake to ________ the meaning of life and draw inspiration from the quiet beauty of nature around him.", hint: "con (intensive) + templum (space for observing omens) + ate (verb suffix)" },
+    { word: "Apparition", sentence: "As the moon rose over the old, abandoned castle, an eerie ________ appeared at the top of the tower, making the hikers freeze in fear and wonder if it was a trick of the light.", hint: "ap (intensive) + parere (to appear) + ition (noun suffix)" },
+    { word: "Discipline", sentence: "To become a professional athlete, you must have unwavering ________, following a strict training schedule and making sacrifices that most people are unwilling to make.", hint: "dis (intensive) + cipline (from Latin disciplina), root from discere (to learn)" },
+    { word: "Trifle", sentence: "The argument started over a mere ________, a forgotten cup of coffee left on the counter, but it escalated quickly and left the two friends not speaking for weeks.", hint: "from French trufle (little trinket), no separable affixes" },
+    { word: "Console", sentence: "I tried to ________ my best friend after she lost her beloved pet, sitting with her for hours and reminding her of all the happy memories they had shared together.", hint: "con (together) + solari (to comfort)" },
+    { word: "Misfortune", sentence: "Though he faced great ________ when his business collapsed and he lost his home, he refused to give up and worked tirelessly to rebuild his life from the ground up.", hint: "mis (bad) + fortune (luck), from Latin fortuna (chance)" },
+    { word: "Enlighten", sentence: "The wise professor used real-life stories and thought-provoking questions to ________ her students about the complexities of human behavior and social justice.", hint: "en (to cause to be) + light (light) + en (verb suffix)" },
+    { word: "Tame", sentence: "It takes patience and gentle care to ________ a wild animal, as you must earn its trust slowly and never force it to do something it is afraid to attempt.", hint: "from Old English tam (subdued), no separable affixes" },
+    { word: "Condemn", sentence: "The international community was quick to ________ the unjust act of violence, as it violated basic human rights and broke the peace treaty all nations had signed.", hint: "con (intensive) + damnare (to judge, condemn)" },
+    { word: "Tedious", sentence: "Sorting through thousands of old documents and typing up handwritten notes is a ________ task, but it is essential for preserving the history of the small town.", hint: "taedere (to weary) + ious (adjective suffix)" },
+    { word: "Extraordinary", sentence: "The young musician gave an ________ performance at the concert hall, playing the piano with a passion and skill that left the entire audience standing and cheering.", hint: "extra (beyond) + ordinary (common), from Latin ordinarius (regular)" }
 ];
 
 // Level data - 4 words per level, 5 levels total = 20 words
@@ -174,9 +180,32 @@ class Station {
         this.successPulsePhase = 0;
         this.fadeOutAlpha = 1;
         this.hoverPhase = 0;
+        // Error feedback effects
+        this.errorFlashTimer = 0;
+        this.errorShakeTimer = 0;
+        this.shakeOffset = { x: 0, y: 0 };
+    }
+
+    triggerErrorFeedback() {
+        this.errorFlashTimer = 0.5; // 0.5 seconds red flash
+        this.errorShakeTimer = 0.5; // 0.5 seconds shake
     }
 
     update(deltaTime) {
+        // Update error feedback timers
+        if (this.errorFlashTimer > 0) {
+            this.errorFlashTimer -= deltaTime;
+        }
+        if (this.errorShakeTimer > 0) {
+            this.errorShakeTimer -= deltaTime;
+            // Calculate shake offset
+            this.shakeOffset.x = (Math.random() - 0.5) * 6;
+            this.shakeOffset.y = (Math.random() - 0.5) * 6;
+        } else {
+            this.shakeOffset.x = 0;
+            this.shakeOffset.y = 0;
+        }
+        
         if (this.satisfied) {
             this.successTimer -= deltaTime;
             this.successPulsePhase += deltaTime * 4;
@@ -225,17 +254,26 @@ class Station {
             return;
         }
         
+        // Apply shake offset for error feedback
+        const drawX = this.x + this.shakeOffset.x;
+        const drawY = this.y + this.shakeOffset.y;
+        
         const patienceRatio = this.patience / this.maxPatience;
         const ringColor = patienceRatio > 0.5 ? '#6bcf7f' : patienceRatio > 0.25 ? '#ffd93d' : '#ff6b6b';
         
+        // Error flash effect (red glow)
+        if (this.errorFlashTimer > 0) {
+            const flashIntensity = this.errorFlashTimer / 0.5;
+            ctx.shadowBlur = 30 * flashIntensity;
+            ctx.shadowColor = '#ff0000';
+        }
         // Hover glow effect
-        if (this.hoverPhase > 0) {
+        else if (this.hoverPhase > 0) {
             ctx.shadowBlur = 20 * this.hoverPhase;
             ctx.shadowColor = '#00d4ff';
         }
-        
         // Urgency glow for low patience
-        if (patienceRatio < 0.25) {
+        else if (patienceRatio < 0.25) {
             const pulse = Math.sin(this.pulsePhase) * 0.5 + 0.5;
             ctx.shadowBlur = 15 * pulse;
             ctx.shadowColor = '#ff6b6b';
@@ -243,31 +281,35 @@ class Station {
         
         // Patience ring - visual representation of remaining time
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * patienceRatio);
-        ctx.strokeStyle = ringColor;
+        ctx.arc(drawX, drawY, this.radius + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * patienceRatio);
+        ctx.strokeStyle = this.errorFlashTimer > 0 ? '#ff3333' : ringColor;
         ctx.lineWidth = 3;
         ctx.stroke();
         
         // Time indicator text (minutes remaining)
         const minutesLeft = Math.ceil(this.patience / 60);
-        ctx.fillStyle = ringColor;
+        ctx.fillStyle = this.errorFlashTimer > 0 ? '#ff3333' : ringColor;
         ctx.font = 'bold 9px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`${minutesLeft}m`, this.x, this.y + this.radius + 15);
+        ctx.fillText(`${minutesLeft}m`, drawX, drawY + this.radius + 15);
         
-        // Main shape - speech bubble style
-        ctx.fillStyle = '#ffd93d';
-        this.drawSpeechBubble(ctx, this.x, this.y, this.radius);
+        // Main shape - speech bubble style (red tint during error)
+        ctx.fillStyle = this.errorFlashTimer > 0 ? '#ff6666' : '#ffd93d';
+        this.drawSpeechBubble(ctx, drawX, drawY, this.radius);
         
         ctx.shadowBlur = 0;
         
-        // Question mark icon
+        // Question mark icon (X during error)
         ctx.fillStyle = '#1a1a2e';
         ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('?', this.x, this.y - 1);
+        if (this.errorFlashTimer > 0) {
+            ctx.fillText('✗', drawX, drawY - 1);
+        } else {
+            ctx.fillText('?', drawX, drawY - 1);
+        }
     }
     
     drawSpeechBubble(ctx, x, y, r) {
@@ -417,32 +459,68 @@ class Train {
             for (let station of stations) {
                 if (station.satisfied || station.completed) continue;
                 
-                if (distance(pos, station) < 30 && station.word === this.carrying) {
-                    station.markSatisfied();
-                    
-                    this.carrying = null;
-                    this.state = 'unloading';
-                    this.waitingTime = 0.3;
-                    
-                    score += Math.floor(station.patience) * 10;
-                    wordsDeliveredInLevel++;
-                    totalWordsDelivered++;
-                    
-                    createParticles(station.x, station.y, '#ffd700');
-                    createParticles(station.x, station.y, '#6bcf7f');
-                    
-                    for (let hub of hubs) {
-                        if (hub.word === station.word) {
-                            hub.hasWord = true;
+                // Check if train is at this station
+                if (distance(pos, station) < 30) {
+                    // Check if word matches
+                    if (station.word === this.carrying) {
+                        // CORRECT delivery
+                        station.markSatisfied();
+                        
+                        this.carrying = null;
+                        this.state = 'unloading';
+                        this.waitingTime = 0.3;
+                        
+                        score += Math.floor(station.patience) * 10;
+                        wordsDeliveredInLevel++;
+                        totalWordsDelivered++;
+                        
+                        createParticles(station.x, station.y, '#ffd700');
+                        createParticles(station.x, station.y, '#6bcf7f');
+                        
+                        for (let hub of hubs) {
+                            if (hub.word === station.word) {
+                                hub.hasWord = true;
+                            }
                         }
+                        
+                        if (wordsDeliveredInLevel >= 4) {
+                            levelComplete();
+                        }
+                        return;
+                    } else {
+                        // INCORRECT delivery - apply penalty
+                        this.handleIncorrectDelivery(station);
+                        return;
                     }
-                    
-                    if (wordsDeliveredInLevel >= 4) {
-                        levelComplete();
-                    }
-                    return;
                 }
             }
+        }
+    }
+
+    handleIncorrectDelivery(station) {
+        // Consume the incorrect word
+        const wrongWord = this.carrying;
+        this.carrying = null;
+        this.state = 'unloading';
+        this.waitingTime = 0.5;
+        
+        // Apply 3-minute penalty to global timer
+        globalGameTime -= PENALTY_TIME;
+        
+        // Trigger visual feedback on station
+        station.triggerErrorFeedback();
+        
+        // Create floating penalty text
+        createPenaltyText(station.x, station.y - 30, '-3 Minutes');
+        
+        // Create red particles for error
+        createParticles(station.x, station.y, '#ff0000');
+        createParticles(station.x, station.y, '#ff6666');
+        
+        // Check if game time dropped below zero
+        if (globalGameTime <= 0) {
+            globalGameTime = 0;
+            gameOver();
         }
     }
 
@@ -495,10 +573,54 @@ class Particle {
     }
 }
 
+// Penalty text effect for incorrect deliveries
+class PenaltyText {
+    constructor(x, y, text) {
+        this.x = x;
+        this.y = y;
+        this.text = text;
+        this.vy = -30; // Float upward
+        this.life = 1;
+        this.decay = 0.8;
+        this.shakePhase = 0;
+    }
+
+    update(deltaTime) {
+        this.y += this.vy * deltaTime;
+        this.life -= this.decay * deltaTime;
+        this.shakePhase += deltaTime * 20;
+    }
+
+    draw(ctx) {
+        ctx.globalAlpha = Math.max(0, this.life);
+        
+        // Shake effect
+        const shakeX = Math.sin(this.shakePhase) * 3;
+        
+        // Red glow
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ff0000';
+        
+        // Draw text
+        ctx.fillStyle = '#ff3333';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.text, this.x + shakeX, this.y);
+        
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+    }
+}
+
 function createParticles(x, y, color) {
     for (let i = 0; i < 8; i++) {
         particles.push(new Particle(x, y, color));
     }
+}
+
+function createPenaltyText(x, y, text) {
+    penaltyTexts.push(new PenaltyText(x, y, text));
 }
 
 // Initialize level - clean map with only 4 word-sentence pairs
@@ -686,6 +808,15 @@ function gameLoop(currentTime) {
 function update(deltaTime) {
     deltaTime = Math.min(deltaTime, 0.1);
     
+    // Update global game timer
+    if (gameState === 'playing') {
+        globalGameTime -= deltaTime;
+        if (globalGameTime <= 0) {
+            globalGameTime = 0;
+            gameOver();
+        }
+    }
+    
     hoveredStation = null;
     
     hubs.forEach(hub => hub.update(deltaTime));
@@ -695,6 +826,12 @@ function update(deltaTime) {
     particles = particles.filter(p => {
         p.update(deltaTime);
         return p.life > 0;
+    });
+    
+    // Update penalty texts
+    penaltyTexts = penaltyTexts.filter(pt => {
+        pt.update(deltaTime);
+        return pt.life > 0;
     });
     
     updateUI();
@@ -755,6 +892,12 @@ function render() {
     
     trains.forEach(train => train.draw(ctx));
     particles.forEach(p => p.draw(ctx));
+    
+    // Draw penalty texts on top
+    penaltyTexts.forEach(pt => pt.draw(ctx));
+    
+    // Draw etymology hint bar at bottom
+    drawEtymologyHintBar(ctx);
 }
 
 function updateUI() {
@@ -767,6 +910,23 @@ function updateUI() {
     // Update progress bar
     const progressPercent = (totalWordsDelivered / 20) * 100;
     document.getElementById('progressBar').style.width = `${progressPercent}%`;
+    
+    // Update global timer display
+    const timerElement = document.getElementById('globalTimer');
+    if (timerElement) {
+        const minutes = Math.floor(globalGameTime / 60);
+        const seconds = Math.floor(globalGameTime % 60);
+        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Change color when time is low
+        if (globalGameTime < 300) { // Less than 5 minutes
+            timerElement.style.color = '#ff6b6b';
+        } else if (globalGameTime < 600) { // Less than 10 minutes
+            timerElement.style.color = '#ffd93d';
+        } else {
+            timerElement.style.color = '#6bcf7f';
+        }
+    }
 }
 
 function updateInfoPanel() {
@@ -782,12 +942,65 @@ function updateInfoPanel() {
     }
 }
 
+// Draw etymology hint bar at bottom of screen
+function drawEtymologyHintBar(ctx) {
+    if (gameState !== 'playing' || !currentVocabData || currentVocabData.length === 0) return;
+    
+    const barHeight = 40;
+    const barY = canvas.height - barHeight - 5;
+    const padding = 15;
+    
+    // Draw subtle background bar
+    ctx.fillStyle = 'rgba(25, 25, 40, 0.7)';
+    ctx.fillRect(padding, barY, canvas.width - padding * 2, barHeight);
+    
+    // Draw border line
+    ctx.strokeStyle = 'rgba(80, 80, 100, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(padding, barY, canvas.width - padding * 2, barHeight);
+    
+    // Build hint text from current level's 4 words - use shorter format
+    let hintText = '';
+    currentVocabData.forEach((data, index) => {
+        if (index > 0) hintText += '  •  ';
+        // Truncate very long hints
+        let shortHint = data.hint;
+        if (shortHint.length > 60) {
+            shortHint = shortHint.substring(0, 57) + '...';
+        }
+        hintText += `${data.word}: ${shortHint}`;
+    });
+    
+    // Draw hint text - subtle, low contrast (Mini Metro style footnote)
+    ctx.fillStyle = 'rgba(130, 130, 150, 0.6)';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Check if text is too long and needs truncation
+    const maxWidth = canvas.width - padding * 4;
+    const textMetrics = ctx.measureText(hintText);
+    
+    if (textMetrics.width > maxWidth) {
+        // Truncate and add ellipsis
+        let truncatedText = hintText;
+        while (ctx.measureText(truncatedText + '...').width > maxWidth && truncatedText.length > 20) {
+            truncatedText = truncatedText.slice(0, -1);
+        }
+        hintText = truncatedText + '...';
+    }
+    
+    ctx.fillText(hintText, canvas.width / 2, barY + barHeight / 2);
+}
+
 function startGame() {
     document.getElementById('startScreen').style.display = 'none';
     gameState = 'playing';
     currentLevel = 1;
     score = 0;
     totalWordsDelivered = 0;
+    globalGameTime = maxGameTime; // Reset global timer to 30 minutes
+    penaltyTexts = []; // Clear any penalty texts
     initLevel(1);
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
@@ -834,13 +1047,22 @@ function restartGame() {
     currentLevel = 1;
     score = 0;
     totalWordsDelivered = 0;
+    globalGameTime = maxGameTime; // Reset global timer
+    penaltyTexts = []; // Clear penalty texts
     initLevel(1);
 }
 
 function gameOver() {
     gameState = 'gameover';
     document.getElementById('gameOverTitle').textContent = 'GAME OVER';
-    document.getElementById('gameOverMessage').textContent = 'A station ran out of patience!';
+    
+    // Check if game over was due to time running out
+    if (globalGameTime <= 0) {
+        document.getElementById('gameOverMessage').textContent = 'Time ran out! Too many incorrect deliveries.';
+    } else {
+        document.getElementById('gameOverMessage').textContent = 'A station ran out of patience!';
+    }
+    
     document.getElementById('finalScore').textContent = `Score: ${score}`;
     document.getElementById('gameOverScreen').style.display = 'flex';
 }
