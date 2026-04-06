@@ -483,8 +483,23 @@ class Train {
                             }
                         }
                         
+                        // Check if level is complete (all 4 words delivered)
                         if (wordsDeliveredInLevel >= 4) {
-                            levelComplete();
+                            // Mark all stations as completed to clear them immediately
+                            stations.forEach(s => {
+                                if (s.satisfied) {
+                                    s.completed = true;
+                                }
+                            });
+                            // Clear all visual entities immediately
+                            hubs = [];
+                            stations = [];
+                            lines = [];
+                            trains = [];
+                            // Show level complete screen after a short delay
+                            setTimeout(() => {
+                                levelComplete();
+                            }, 500);
                         }
                         return;
                     } else {
@@ -504,8 +519,8 @@ class Train {
         this.state = 'unloading';
         this.waitingTime = 0.5;
         
-        // Apply 3-minute penalty to global timer
-        globalGameTime -= PENALTY_TIME;
+        // STRICT: Apply exactly 3-minute (180 seconds) penalty to global timer
+        globalGameTime = Math.max(0, globalGameTime - PENALTY_TIME);
         
         // Trigger visual feedback on station
         station.triggerErrorFeedback();
@@ -517,7 +532,7 @@ class Train {
         createParticles(station.x, station.y, '#ff0000');
         createParticles(station.x, station.y, '#ff6666');
         
-        // Check if game time dropped below zero
+        // Check if game time dropped to zero
         if (globalGameTime <= 0) {
             globalGameTime = 0;
             gameOver();
@@ -946,34 +961,31 @@ function updateInfoPanel() {
 function drawEtymologyHintBar(ctx) {
     if (gameState !== 'playing' || !currentVocabData || currentVocabData.length === 0) return;
     
-    const barHeight = 40;
-    const barY = canvas.height - barHeight - 5;
-    const padding = 15;
+    // ENLARGED: 6x larger font size - highly conspicuous
+    const fontSize = 60; // 6x larger than original 10px
+    const barHeight = 80;
+    const barY = canvas.height - barHeight - 10;
+    const padding = 20;
     
-    // Draw subtle background bar
-    ctx.fillStyle = 'rgba(25, 25, 40, 0.7)';
+    // Draw prominent background bar
+    ctx.fillStyle = 'rgba(40, 40, 60, 0.85)';
     ctx.fillRect(padding, barY, canvas.width - padding * 2, barHeight);
     
     // Draw border line
-    ctx.strokeStyle = 'rgba(80, 80, 100, 0.25)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(150, 150, 180, 0.4)';
+    ctx.lineWidth = 2;
     ctx.strokeRect(padding, barY, canvas.width - padding * 2, barHeight);
     
-    // Build hint text from current level's 4 words - use shorter format
+    // Build hint text from current level's 4 words
     let hintText = '';
     currentVocabData.forEach((data, index) => {
         if (index > 0) hintText += '  •  ';
-        // Truncate very long hints
-        let shortHint = data.hint;
-        if (shortHint.length > 60) {
-            shortHint = shortHint.substring(0, 57) + '...';
-        }
-        hintText += `${data.word}: ${shortHint}`;
+        hintText += `${data.word}: ${data.hint}`;
     });
     
-    // Draw hint text - subtle, low contrast (Mini Metro style footnote)
-    ctx.fillStyle = 'rgba(130, 130, 150, 0.6)';
-    ctx.font = '10px Arial';
+    // Draw hint text - ENLARGED and highly visible
+    ctx.fillStyle = 'rgba(200, 200, 220, 0.9)';
+    ctx.font = `${fontSize}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
