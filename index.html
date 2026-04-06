@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocab Metro - English Vocabulary Learning Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            background: #0f0f1a;
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(0, 150, 255, 0.3);
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 2px solid #00d4ff;
+            pointer-events: auto;
+        }
+
+        .stat-box h3 {
+            font-size: 14px;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-box p {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 15, 26, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        #gameOverScreen {
+            display: none;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #00d4ff, #ff6b6b, #ffd93d, #6bcf7f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            max-width: 500px;
+        }
+
+        .instructions h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+
+        .instructions ul {
+            list-style: none;
+            line-height: 2;
+        }
+
+        .instructions li:before {
+            content: "▸ ";
+            color: #6bcf7f;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            pointer-events: auto;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+
+        #finalScore {
+            font-size: 36px;
+            margin: 20px 0;
+            color: #ffd93d;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 4px;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div class="stat-box">
+                <h3>SCORE</h3>
+                <p id="score">0</p>
+            </div>
+            <div class="stat-box">
+                <h3>DELIVERED</h3>
+                <p id="delivered">0/20</p>
+            </div>
+            <div class="stat-box">
+                <h3>LINES</h3>
+                <p id="lines">0</p>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff6b6b;"></div>
+                <span>Dictionary Hub (Word Source)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffd93d;"></div>
+                <span>Sentence Station (Destination)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #6bcf7f;"></div>
+                <span>Train with Word</span>
+            </div>
+        </div>
+
+        <div id="startScreen">
+            <h1>📚 VOCAB METRO</h1>
+            <p class="subtitle">Master English vocabulary by building transit lines to deliver words to their matching sentences!</p>
+            <div class="instructions">
+                <h3>How to Play:</h3>
+                <ul>
+                    <li>Click and drag from Dictionary Hubs to Sentence Stations</li>
+                    <li>Trains will automatically run on your lines</li>
+                    <li>Trains pick up words from Hubs and deliver to matching Stations</li>
+                    <li>Watch the patience timers on Stations - don't let them run out!</li>
+                    <li>Deliver all 20 words to win!</li>
+                </ul>
+            </div>
+            <button onclick="startGame()">START GAME</button>
+        </div>
+
+        <div id="gameOverScreen">
+            <h1 id="gameOverTitle">GAME OVER</h1>
+            <p id="finalScore">Score: 0</p>
+            <p class="subtitle" id="gameOverMessage">A station ran out of patience!</p>
+            <button onclick="restartGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
