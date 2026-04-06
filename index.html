@@ -239,14 +239,16 @@
             color: #ffd93d;
         }
 
+        /* RELOCATED: Moved to top-right to avoid blocking bottom hint panel */
         .legend {
             position: absolute;
-            bottom: 15px;
-            left: 20px;
+            top: 80px;
+            right: 20px;
             background: rgba(0, 0, 0, 0.7);
             padding: 12px 15px;
             border-radius: 8px;
-            border: 1px solid #333;
+            border: 2px solid #00d4ff;
+            z-index: 10;
         }
 
         .legend-item {
@@ -293,20 +295,24 @@
             border-top: 6px solid #ffd93d;
         }
 
+        /* RELOCATED: Moved to top-left to avoid blocking bottom hint panel */
         .progress-bar {
             position: absolute;
-            bottom: 15px;
-            right: 20px;
+            top: 80px;
+            left: 20px;
             background: rgba(0, 0, 0, 0.7);
             padding: 12px 15px;
             border-radius: 8px;
-            border: 1px solid #333;
+            border: 2px solid #00d4ff;
+            z-index: 10;
         }
 
         .progress-bar h4 {
             font-size: 11px;
-            color: #888;
+            color: #00d4ff;
             margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .progress-fill {

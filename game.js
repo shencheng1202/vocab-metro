@@ -483,14 +483,14 @@ class Train {
                             }
                         }
                         
+                        // DESTROY: Remove the hub that delivered this word
+                        const hubIndex = hubs.findIndex(h => h.word === station.word);
+                        if (hubIndex > -1) {
+                            hubs.splice(hubIndex, 1);
+                        }
+                        
                         // Check if level is complete (all 4 words delivered)
                         if (wordsDeliveredInLevel >= 4) {
-                            // Mark all stations as completed to clear them immediately
-                            stations.forEach(s => {
-                                if (s.satisfied) {
-                                    s.completed = true;
-                                }
-                            });
                             // Clear all visual entities immediately
                             hubs = [];
                             stations = [];
@@ -521,6 +521,18 @@ class Train {
         
         // STRICT: Apply exactly 3-minute (180 seconds) penalty to global timer
         globalGameTime = Math.max(0, globalGameTime - PENALTY_TIME);
+        
+        // DESTROY: Remove the line connecting to this station
+        const lineIndex = lines.indexOf(this.line);
+        if (lineIndex > -1) {
+            lines.splice(lineIndex, 1);
+        }
+        
+        // Remove this train
+        const trainIndex = trains.indexOf(this);
+        if (trainIndex > -1) {
+            trains.splice(trainIndex, 1);
+        }
         
         // Trigger visual feedback on station
         station.triggerErrorFeedback();
@@ -957,35 +969,40 @@ function updateInfoPanel() {
     }
 }
 
-// Draw etymology hint bar at bottom of screen
+// Draw etymology hint bar at bottom of screen - styled like game stats
 function drawEtymologyHintBar(ctx) {
     if (gameState !== 'playing' || !currentVocabData || currentVocabData.length === 0) return;
     
-    // ENLARGED: 6x larger font size - highly conspicuous
-    const fontSize = 60; // 6x larger than original 10px
-    const barHeight = 80;
+    const barHeight = 100;
     const barY = canvas.height - barHeight - 10;
-    const padding = 20;
+    const padding = 30;
     
-    // Draw prominent background bar
-    ctx.fillStyle = 'rgba(40, 40, 60, 0.85)';
+    // Draw background matching stat-box style
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(padding, barY, canvas.width - padding * 2, barHeight);
     
-    // Draw border line
-    ctx.strokeStyle = 'rgba(150, 150, 180, 0.4)';
+    // Draw border matching stat-box style (cyan border like Level/Time)
+    ctx.strokeStyle = '#00d4ff';
     ctx.lineWidth = 2;
     ctx.strokeRect(padding, barY, canvas.width - padding * 2, barHeight);
+    
+    // Draw title like stat-box h3
+    ctx.fillStyle = '#00d4ff';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ETYMOLOGY HINTS', canvas.width / 2, barY + 10);
     
     // Build hint text from current level's 4 words
     let hintText = '';
     currentVocabData.forEach((data, index) => {
-        if (index > 0) hintText += '  •  ';
+        if (index > 0) hintText += '  |  ';
         hintText += `${data.word}: ${data.hint}`;
     });
     
-    // Draw hint text - ENLARGED and highly visible
-    ctx.fillStyle = 'rgba(200, 200, 220, 0.9)';
-    ctx.font = `${fontSize}px Arial`;
+    // Draw hint text - same style as stat-box p (large, bold, white)
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 18px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -1002,7 +1019,7 @@ function drawEtymologyHintBar(ctx) {
         hintText = truncatedText + '...';
     }
     
-    ctx.fillText(hintText, canvas.width / 2, barY + barHeight / 2);
+    ctx.fillText(hintText, canvas.width / 2, barY + barHeight / 2 + 5);
 }
 
 function startGame() {
