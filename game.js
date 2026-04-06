@@ -483,10 +483,11 @@ class Train {
                             }
                         }
                         
-                        // CORRECT delivery - TOTAL CLEANUP: Destroy line, train, AND hub
-                        // This happens regardless of any previous incorrect attempts
+                        // ABSOLUTE RULE: Line destruction on EVERY delivery attempt
+                        // This is unconditional - happens on 1st try or 10th try, CORRECT or INCORRECT
+                        // A drawn line must NEVER persist after train finishes its journey
                         
-                        // DESTROY: Remove the transit line
+                        // DESTROY: Remove the transit line (ABSOLUTE - no exceptions)
                         const lineIndex = lines.indexOf(this.line);
                         if (lineIndex > -1) {
                             lines.splice(lineIndex, 1);
@@ -498,7 +499,7 @@ class Train {
                             trains.splice(trainIndex, 1);
                         }
                         
-                        // DESTROY: Remove the Word Hub (yellow ball)
+                        // DESTROY: Remove the Word Hub (yellow ball) on correct delivery
                         const hubIndex = hubs.findIndex(h => h.word === station.word);
                         if (hubIndex > -1) {
                             hubs.splice(hubIndex, 1);
@@ -529,8 +530,9 @@ class Train {
     }
 
     handleIncorrectDelivery(station) {
-        // INCORRECT delivery: Apply penalty AND destroy line only
-        // Word Hub and Station remain on the map for retry
+        // ABSOLUTE RULE: Line destruction on EVERY delivery attempt
+        // This applies to INCORRECT deliveries as well - line is destroyed immediately
+        // Word Hub and Station remain on the map for retry, but line is GONE
         
         // Consume the incorrect word
         const wrongWord = this.carrying;
@@ -541,7 +543,8 @@ class Train {
         // STRICT: Apply exactly 3-minute (180 seconds) penalty to global timer
         globalGameTime = Math.max(0, globalGameTime - PENALTY_TIME);
         
-        // DESTROY: Remove the transit line connecting hub to station
+        // ABSOLUTE DESTRUCTION: Remove the transit line (unconditional)
+        // This happens on EVERY attempt - line never persists after delivery
         const lineIndex = lines.indexOf(this.line);
         if (lineIndex > -1) {
             lines.splice(lineIndex, 1);
