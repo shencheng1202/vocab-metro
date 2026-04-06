@@ -938,15 +938,24 @@ function render() {
 }
 
 function updateUI() {
-    document.getElementById('score').textContent = score;
-    document.getElementById('level').textContent = `${currentLevel}/${totalLevels}`;
-    document.getElementById('delivered').textContent = `${wordsDeliveredInLevel}/4`;
-    document.getElementById('lines').textContent = lines.length;
-    document.getElementById('totalProgress').textContent = `${totalWordsDelivered}/20`;
+    const scoreEl = document.getElementById('score');
+    const levelEl = document.getElementById('level');
+    const deliveredEl = document.getElementById('delivered');
+    const linesEl = document.getElementById('lines');
+    const totalProgressEl = document.getElementById('totalProgress');
+    const progressBarEl = document.getElementById('progressBar');
     
-    // Update progress bar
-    const progressPercent = (totalWordsDelivered / 20) * 100;
-    document.getElementById('progressBar').style.width = `${progressPercent}%`;
+    if (scoreEl) scoreEl.textContent = score;
+    if (levelEl) levelEl.textContent = `${currentLevel}/${totalLevels}`;
+    if (deliveredEl) deliveredEl.textContent = `${wordsDeliveredInLevel}/4`;
+    if (linesEl) linesEl.textContent = lines.length;
+    if (totalProgressEl) totalProgressEl.textContent = `${totalWordsDelivered}/20`;
+    
+    // Update progress bar if it exists
+    if (progressBarEl) {
+        const progressPercent = (totalWordsDelivered / 20) * 100;
+        progressBarEl.style.width = `${progressPercent}%`;
+    }
     
     // Update global timer display
     const timerElement = document.getElementById('globalTimer');
@@ -983,53 +992,68 @@ function updateInfoPanel() {
 function drawEtymologyHintBar(ctx) {
     if (gameState !== 'playing' || !currentVocabData || currentVocabData.length === 0) return;
     
-    const barHeight = 90;
+    const barHeight = 110;
     const barY = canvas.height - barHeight - 10;
-    const padding = 30;
+    const padding = 20;
+    const availableWidth = canvas.width - padding * 2;
     
     // Draw background matching stat-box style
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(padding, barY, canvas.width - padding * 2, barHeight);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(padding, barY, availableWidth, barHeight);
     
     // Draw border matching stat-box style (cyan border like Level/Time)
     ctx.strokeStyle = '#00d4ff';
     ctx.lineWidth = 2;
-    ctx.strokeRect(padding, barY, canvas.width - padding * 2, barHeight);
+    ctx.strokeRect(padding, barY, availableWidth, barHeight);
     
     // Draw title like stat-box h3
     ctx.fillStyle = '#00d4ff';
-    ctx.font = 'bold 12px Arial';
+    ctx.font = 'bold 11px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText('ETYMOLOGY HINTS', canvas.width / 2, barY + 8);
+    ctx.fillText('ETYMOLOGY HINTS', canvas.width / 2, barY + 6);
     
-    // Build hint text from current level's 4 words
-    let hintText = '';
-    currentVocabData.forEach((data, index) => {
-        if (index > 0) hintText += '  •  ';
-        hintText += `${data.word}: ${data.hint}`;
-    });
+    // Calculate layout for 4 hints (2 per row)
+    const colWidth = availableWidth / 2;
+    const rowHeight = 40;
+    const startY = barY + 28;
     
-    // ADJUSTED: Smaller font size to fit all hints on screen
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 13px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.font = '11px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
     
-    // Check if text is too long and needs truncation
-    const maxWidth = canvas.width - padding * 4;
-    const textMetrics = ctx.measureText(hintText);
-    
-    if (textMetrics.width > maxWidth) {
-        // Truncate and add ellipsis
-        let truncatedText = hintText;
-        while (ctx.measureText(truncatedText + '...').width > maxWidth && truncatedText.length > 20) {
-            truncatedText = truncatedText.slice(0, -1);
+    currentVocabData.forEach((data, index) => {
+        const col = index % 2;
+        const row = Math.floor(index / 2);
+        const x = padding + 15 + col * colWidth;
+        const y = startY + row * rowHeight;
+        
+        // Word in bold
+        ctx.font = 'bold 11px Arial';
+        ctx.fillStyle = '#ffd93d';
+        ctx.fillText(data.word + ':', x, y);
+        
+        // Hint text
+        const wordWidth = ctx.measureText(data.word + ': ').width;
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#ccc';
+        
+        // Wrap hint text if too long
+        const hintText = data.hint;
+        const maxHintWidth = colWidth - 30;
+        
+        if (ctx.measureText(hintText).width > maxHintWidth) {
+            // Truncate with ellipsis
+            let truncated = hintText;
+            while (ctx.measureText(truncated + '...').width > maxHintWidth && truncated.length > 10) {
+                truncated = truncated.slice(0, -1);
+            }
+            ctx.fillText(truncated + '...', x + wordWidth, y);
+        } else {
+            ctx.fillText(hintText, x + wordWidth, y);
         }
-        hintText = truncatedText + '...';
-    }
-    
-    ctx.fillText(hintText, canvas.width / 2, barY + barHeight / 2 + 5);
+    });
 }
 
 function startGame() {
