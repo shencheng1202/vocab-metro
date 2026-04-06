@@ -534,11 +534,21 @@ class Train {
         // This applies to INCORRECT deliveries as well - line is destroyed immediately
         // Word Hub and Station remain on the map for retry, but line is GONE
         
-        // Consume the incorrect word
+        // Store the wrong word before clearing it
         const wrongWord = this.carrying;
+        
+        // Consume the incorrect word
         this.carrying = null;
         this.state = 'unloading';
         this.waitingTime = 0.5;
+        
+        // CRITICAL FIX: Reset hasWord flag so hub can be used again
+        // This allows infinite retry attempts from the same hub
+        for (let hub of hubs) {
+            if (hub.word === wrongWord) {
+                hub.hasWord = true; // Reset so train can pick it up again
+            }
+        }
         
         // STRICT: Apply exactly 3-minute (180 seconds) penalty to global timer
         globalGameTime = Math.max(0, globalGameTime - PENALTY_TIME);
