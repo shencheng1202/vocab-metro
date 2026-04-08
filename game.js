@@ -33,29 +33,29 @@ const lineColors = [
     '#ff6b9d'  // Pink
 ];
 
-// HARDCODED DEFAULT: Default vocabulary data (20 words) with detailed etymology hints
+// HARDCODED DEFAULT: Default vocabulary data (20 words) with detailed etymology hints, part of speech, and definitions
 // This is hardcoded to avoid CORS issues when running as a static file
 const defaultVocabData = [
-    { word: "Torment", sentence: "The guilt of his past mistakes continued to ________ him for decades, even after he apologized to those he had hurt and spent his life trying to make amends.", hint: "torquere (to twist) + ment (noun suffix)" },
-    { word: "Indulgent", sentence: "My grandmother is always ________ with her grandchildren, spoiling them with sweet treats and letting them stay up late whenever they visit her countryside home.", hint: "in (into) + dulge (to sweeten) + ent (adjective suffix)" },
-    { word: "Abandon", sentence: "When she realized the mission was impossible and all hope was lost, she chose to ________ the project that had consumed her years of hard work and dedication.", hint: "a (intensive) + bandon (to bind)" },
-    { word: "Intrigue", sentence: "The mysterious note left on the doorstep, with its cryptic symbols and handwritten message, continued to ________ the detective long after she finished her initial investigation.", hint: "in (into) + trigue (from French intriguer), root from Latin tricari (to trick)" },
-    { word: "Absurd", sentence: "It is ________ to believe that you can master a foreign language in just a week, no matter how many flashcards you memorize or apps you use.", hint: "ab (away) + surdus (deaf, stupid)" },
-    { word: "Rite", sentence: "In many cultures, a coming-of-age ________ marks the moment when a young person transitions from childhood to adulthood, often with special ceremonies and traditions.", hint: "from Latin ritus (custom, ceremony), no separable affixes" },
-    { word: "Catastrophe", sentence: "If we fail to address climate change and ignore the warnings of scientists, we will face an environmental ________ that will alter life on Earth for generations to come.", hint: "cata (down) + strophe (turn)" },
-    { word: "Reverie", sentence: "She fell into a peaceful ________ while staring out the window at the falling snow, imagining herself walking through a quiet forest and listening to the crunch of snow under her boots.", hint: "re (back) + ver (to wander) + ie (noun suffix)" },
-    { word: "Perceptive", sentence: "The ________ teacher noticed the subtle change in her student's mood and realized he was struggling with anxiety, so she pulled him aside to talk and offer support.", hint: "per (through) + capere (to take, seize) + tive (adjective suffix)" },
-    { word: "Contemplate", sentence: "Every morning, the elderly poet sits by the lake to ________ the meaning of life and draw inspiration from the quiet beauty of nature around him.", hint: "con (intensive) + templum (space for observing omens) + ate (verb suffix)" },
-    { word: "Apparition", sentence: "As the moon rose over the old, abandoned castle, an eerie ________ appeared at the top of the tower, making the hikers freeze in fear and wonder if it was a trick of the light.", hint: "ap (intensive) + parere (to appear) + ition (noun suffix)" },
-    { word: "Discipline", sentence: "To become a professional athlete, you must have unwavering ________, following a strict training schedule and making sacrifices that most people are unwilling to make.", hint: "dis (intensive) + cipline (from Latin disciplina), root from discere (to learn)" },
-    { word: "Trifle", sentence: "The argument started over a mere ________, a forgotten cup of coffee left on the counter, but it escalated quickly and left the two friends not speaking for weeks.", hint: "from French trufle (little trinket), no separable affixes" },
-    { word: "Console", sentence: "I tried to ________ my best friend after she lost her beloved pet, sitting with her for hours and reminding her of all the happy memories they had shared together.", hint: "con (together) + solari (to comfort)" },
-    { word: "Misfortune", sentence: "Though he faced great ________ when his business collapsed and he lost his home, he refused to give up and worked tirelessly to rebuild his life from the ground up.", hint: "mis (bad) + fortune (luck), from Latin fortuna (chance)" },
-    { word: "Enlighten", sentence: "The wise professor used real-life stories and thought-provoking questions to ________ her students about the complexities of human behavior and social justice.", hint: "en (to cause to be) + light (light) + en (verb suffix)" },
-    { word: "Tame", sentence: "It takes patience and gentle care to ________ a wild animal, as you must earn its trust slowly and never force it to do something it is afraid to attempt.", hint: "from Old English tam (subdued), no separable affixes" },
-    { word: "Condemn", sentence: "The international community was quick to ________ the unjust act of violence, as it violated basic human rights and broke the peace treaty all nations had signed.", hint: "con (intensive) + damnare (to judge, condemn)" },
-    { word: "Tedious", sentence: "Sorting through thousands of old documents and typing up handwritten notes is a ________ task, but it is essential for preserving the history of the small town.", hint: "taedere (to weary) + ious (adjective suffix)" },
-    { word: "Extraordinary", sentence: "The young musician gave an ________ performance at the concert hall, playing the piano with a passion and skill that left the entire audience standing and cheering.", hint: "extra (beyond) + ordinary (common), from Latin ordinarius (regular)" }
+    { word: "Torment", partOfSpeech: "Verb/Noun", definition: "To cause severe mental or physical suffering; severe suffering", sentence: "The guilt of his past mistakes continued to ________ him for decades, even after he apologized to those he had hurt and spent his life trying to make amends.", hint: "torquere (to twist) + ment (noun suffix)" },
+    { word: "Indulgent", partOfSpeech: "Adjective", definition: "Ready to allow excessive pleasure or freedom to someone; lenient", sentence: "My grandmother is always ________ with her grandchildren, spoiling them with sweet treats and letting them stay up late whenever they visit her countryside home.", hint: "in (into) + dulge (to sweeten) + ent (adjective suffix)" },
+    { word: "Abandon", partOfSpeech: "Verb/Noun", definition: "To leave permanently or give up completely; the act of leaving something", sentence: "When she realized the mission was impossible and all hope was lost, she chose to ________ the project that had consumed her years of hard work and dedication.", hint: "a (intensive) + bandon (to bind)" },
+    { word: "Intrigue", partOfSpeech: "Verb/Noun", definition: "To arouse curiosity or interest; a secret plan or plot", sentence: "The mysterious note left on the doorstep, with its cryptic symbols and handwritten message, continued to ________ the detective long after she finished her initial investigation.", hint: "in (into) + trigue (from French intriguer, to plot), root from Latin tricari (to trick)" },
+    { word: "Absurd", partOfSpeech: "Adjective", definition: "Utterly ridiculous or unreasonable", sentence: "It is ________ to believe that you can master a foreign language in just a week, no matter how many flashcards you memorize or apps you use.", hint: "ab (away) + surdus (deaf, stupid)" },
+    { word: "Rite", partOfSpeech: "Noun", definition: "A religious or traditional ceremony", sentence: "In many cultures, a coming-of-age ________ marks the moment when a young person transitions from childhood to adulthood, often with special ceremonies and traditions.", hint: "from Latin ritus (custom, ceremony), no separable affixes" },
+    { word: "Catastrophe", partOfSpeech: "Noun", definition: "An event causing great and often sudden damage or suffering; a disaster", sentence: "If we fail to address climate change and ignore the warnings of scientists, we will face an environmental ________ that will alter life on Earth for generations to come.", hint: "cata (down) + strophe (turn)" },
+    { word: "Reverie", partOfSpeech: "Noun", definition: "A state of being lost in one's thoughts; a daydream", sentence: "She fell into a peaceful ________ while staring out the window at the falling snow, imagining herself walking through a quiet forest and listening to the crunch of snow under her boots.", hint: "re (back) + ver (to wander) + ie (noun suffix)" },
+    { word: "Perceptive", partOfSpeech: "Adjective", definition: "Having or showing sensitive insight; observant", sentence: "The ________ teacher noticed the subtle change in her student's mood and realized he was struggling with anxiety, so she pulled him aside to talk and offer support.", hint: "per (through) + capere (to take, seize) + tive (adjective suffix)" },
+    { word: "Contemplate", partOfSpeech: "Verb", definition: "To think about something deeply and carefully", sentence: "Every morning, the elderly poet sits by the lake to ________ the meaning of life and draw inspiration from the quiet beauty of nature around him.", hint: "con (intensive) + templum (a space for observing omens) + ate (verb suffix)" },
+    { word: "Apparition", partOfSpeech: "Noun", definition: "A ghost or ghostlike image of a person", sentence: "As the moon rose over the old, abandoned castle, an eerie ________ appeared at the top of the tower, making the hikers freeze in fear and wonder if it was a trick of the light.", hint: "ap (intensive) + parere (to appear) + ition (noun suffix)" },
+    { word: "Discipline", partOfSpeech: "Noun/Verb", definition: "The practice of training people to obey rules; to train someone to obey rules", sentence: "To become a professional athlete, you must have unwavering ________, following a strict training schedule and making sacrifices that most people are unwilling to make.", hint: "dis (intensive) + cipline (from Latin disciplina, instruction), root from discere (to learn)" },
+    { word: "Trifle", partOfSpeech: "Noun/Verb", definition: "A thing of little value or importance; to treat something as unimportant", sentence: "The argument started over a mere ________, a forgotten cup of coffee left on the counter, but it escalated quickly and left the two friends not speaking for weeks.", hint: "from French trufle (little trinket), no separable affixes; also a verb, meaning 'to disdain'" },
+    { word: "Console", partOfSpeech: "Verb/Noun", definition: "To comfort someone at a time of grief or disappointment; a panel with controls", sentence: "I tried to ________ my best friend after she lost her beloved pet, sitting with her for hours and reminding her of all the happy memories they had shared together.", hint: "con (together) + solari (to comfort)" },
+    { word: "Misfortune", partOfSpeech: "Noun", definition: "Bad luck or an unlucky event", sentence: "Though he faced great ________ when his business collapsed and he lost his home, he refused to give up and worked tirelessly to rebuild his life from the ground up.", hint: "mis (bad) + fortune (luck), fortune from Latin fortuna (chance)" },
+    { word: "Enlighten", partOfSpeech: "Verb", definition: "To give someone knowledge or understanding about something", sentence: "The wise professor used real-life stories and thought-provoking questions to ________ her students about the complexities of human behavior and social justice.", hint: "en (to cause to be) + light (light) + en (verb suffix)" },
+    { word: "Tame", partOfSpeech: "Adjective/Verb", definition: "Not dangerous or wild; to train a wild animal to be gentle", sentence: "It takes patience and gentle care to ________ a wild animal, as you must earn its trust slowly and never force it to do something it is afraid to attempt.", hint: "from Old English tam (subdued), no separable affixes; can be an adjective or a verb" },
+    { word: "Condemn", partOfSpeech: "Verb", definition: "To express strong disapproval of something; to sentence someone to punishment", sentence: "The international community was quick to ________ the unjust act of violence, as it violated basic human rights and broke the peace treaty all nations had signed.", hint: "con (intensive) + damnare (to judge, condemn)" },
+    { word: "Tedious", partOfSpeech: "Adjective", definition: "Too long, slow, or dull; boring and monotonous", sentence: "Sorting through thousands of old documents and typing up handwritten notes is a ________ task, but it is essential for preserving the history of the small town.", hint: "taedere (to weary) + ious (adjective suffix)" },
+    { word: "Extraordinary", partOfSpeech: "Adjective", definition: "Very unusual or remarkable", sentence: "The young musician gave an ________ performance at the concert hall, playing the piano with a passion and skill that left the entire audience standing and cheering.", hint: "extra (beyond) + ordinary (common), ordinary from Latin ordinarius (regular)" }
 ];
 
 // Active vocabulary data - starts with default, can be overridden by upload
@@ -691,17 +691,32 @@ function parseVocabFile(text) {
     const lines = text.split('\n').filter(line => line.trim() !== '');
     
     for (const line of lines) {
-        // Parse format: "Word: XXX, Sentence: YYY, Hint: ZZZ"
+        // Parse format with optional Part of Speech and Definition
+        // "Word: XXX, Part of Speech: POS, Definition: DEF, Sentence: YYY, Hint: ZZZ"
         const wordMatch = line.match(/Word:\s*([^,]+)/i);
         const sentenceMatch = line.match(/Sentence:\s*(.+?)(?=,\s*Hint:|$)/i);
         const hintMatch = line.match(/Hint:\s*(.+)$/i);
         
+        // Optional fields
+        const posMatch = line.match(/Part of Speech:\s*([^,]+)/i);
+        const defMatch = line.match(/Definition:\s*([^,]+?)(?=,\s*(Sentence|Hint):|$)/i);
+        
         if (wordMatch && sentenceMatch) {
-            vocabData.push({
+            const vocabItem = {
                 word: wordMatch[1].trim(),
                 sentence: sentenceMatch[1].trim(),
                 hint: hintMatch ? hintMatch[1].trim() : 'No hint available'
-            });
+            };
+            
+            // Add optional fields if present
+            if (posMatch) {
+                vocabItem.partOfSpeech = posMatch[1].trim();
+            }
+            if (defMatch) {
+                vocabItem.definition = defMatch[1].trim();
+            }
+            
+            vocabData.push(vocabItem);
         }
     }
     
