@@ -68,6 +68,39 @@ let currentVocabData = [];
 let levelData = [];
 let totalLevels = 5; // Default, will be recalculated for custom data
 
+// Emoji mapping for vocabulary words
+const wordEmojiMap = {
+    'torment': '😰',
+    'indulgent': '🍰',
+    'abandon': '🏃',
+    'intrigue': '🕵️',
+    'absurd': '🤪',
+    'rite': '⛪',
+    'catastrophe': '💥',
+    'reverie': '💭',
+    'perceptive': '👁️',
+    'contemplate': '🤔',
+    'apparition': '👻',
+    'discipline': '📏',
+    'trifle': '🧁',
+    'console': '🤗',
+    'misfortune': '😢',
+    'enlighten': '💡',
+    'tame': '🦁',
+    'condemn': '⚖️',
+    'tedious': '😴',
+    'extraordinary': '✨'
+};
+
+// Function to get emoji for a word
+function getWordEmoji(word) {
+    const lowerWord = word.toLowerCase();
+    return wordEmojiMap[lowerWord] || '📚';
+}
+
+// Study Room state
+let studyRoomData = [];
+
 // Game entities
 let hubs = [];
 let stations = [];
@@ -778,9 +811,9 @@ function handleFileUpload(event) {
         statusEl.textContent = `✅ Loaded ${parsedData.length} words, ${totalLevels} levels`;
         statusEl.className = '';
         
-        // Auto-start game after short delay
+        // Auto-enter study room after short delay
         setTimeout(() => {
-            startGame();
+            enterStudyRoom();
         }, 1000);
     };
     
@@ -1231,6 +1264,87 @@ function drawEtymologyHintBar(ctx) {
             ctx.fillText(hintText, x + wordWidth, y);
         }
     });
+}
+
+// Study Room Functions
+function enterStudyRoom() {
+    console.log('Entering Study Room');
+    
+    // Ensure default data is loaded
+    if (!allVocabData || allVocabData.length === 0) {
+        allVocabData = [...defaultVocabData];
+    }
+    
+    // Prepare study room data with emojis
+    studyRoomData = allVocabData.map(item => ({
+        ...item,
+        emoji: getWordEmoji(item.word),
+        flipped: false
+    }));
+    
+    // Hide start screen, show study room
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('studyRoomScreen').style.display = 'flex';
+    
+    // Render flashcards
+    renderFlashcards();
+}
+
+function renderFlashcards() {
+    const container = document.getElementById('flashcardContainer');
+    if (!container) return;
+    
+    container.innerHTML = studyRoomData.map((item, index) => `
+        <div class="flashcard ${item.flipped ? 'flipped' : ''}" onclick="flipCard(${index})">
+            <div class="flashcard-front">
+                <div class="flashcard-emoji">${item.emoji}</div>
+                <div class="flashcard-word">${item.word}</div>
+            </div>
+            <div class="flashcard-back">
+                <div class="flashcard-word">${item.word}</div>
+                <div class="flashcard-pos">${item.partOfSpeech || 'N/A'}</div>
+                <div class="flashcard-definition">${item.definition || ''}</div>
+                <div class="flashcard-hint">💡 ${item.hint}</div>
+                <div class="flashcard-sentence">${item.sentence.replace('________', '<span class="blank">' + item.word + '</span>')}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function flipCard(index) {
+    studyRoomData[index].flipped = !studyRoomData[index].flipped;
+    renderFlashcards();
+}
+
+function startGameFromStudyRoom() {
+    console.log('Starting game from Study Room');
+    
+    // Hide study room
+    document.getElementById('studyRoomScreen').style.display = 'none';
+    
+    // Generate level data
+    levelData = generateLevelData(allVocabData);
+    totalLevels = levelData.length;
+    
+    // Start the game
+    gameState = 'playing';
+    currentLevel = 1;
+    score = 0;
+    totalWordsDelivered = 0;
+    wordsDeliveredInLevel = 0;
+    globalGameTime = maxGameTime;
+    penaltyTexts = [];
+    
+    // Clear canvas elements
+    hubs = [];
+    stations = [];
+    lines = [];
+    trains = [];
+    particles = [];
+    
+    initLevel(1);
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
 }
 
 function startGame() {

@@ -105,7 +105,7 @@
             color: #fff;
         }
 
-        #startScreen, #gameOverScreen, #levelCompleteScreen {
+        #startScreen, #gameOverScreen, #levelCompleteScreen, #studyRoomScreen {
             position: absolute;
             top: 0;
             left: 0;
@@ -119,8 +119,138 @@
             z-index: 100;
         }
 
-        #gameOverScreen, #levelCompleteScreen {
+        #gameOverScreen, #levelCompleteScreen, #studyRoomScreen {
             display: none;
+        }
+
+        #studyRoomScreen {
+            overflow-y: auto;
+            padding: 40px 20px;
+        }
+
+        #flashcardContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px 0;
+            padding: 0 20px;
+        }
+
+        .flashcard {
+            background: linear-gradient(145deg, #1e1e3f, #2a2a5a);
+            border-radius: 16px;
+            padding: 30px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid #00d4ff;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .flashcard.flipped {
+            background: linear-gradient(145deg, #2a2a5a, #1e1e3f);
+            border-color: #ffd93d;
+        }
+
+        .flashcard-emoji {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+
+        .flashcard-word {
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .flashcard-pos {
+            font-size: 14px;
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+
+        .flashcard-definition {
+            font-size: 16px;
+            color: #ccc;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .flashcard-hint {
+            font-size: 13px;
+            color: #ffd93d;
+            font-style: italic;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 217, 61, 0.1);
+            border-radius: 8px;
+        }
+
+        .flashcard-sentence {
+            font-size: 14px;
+            color: #aaa;
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        .flashcard-sentence .blank {
+            color: #ffd93d;
+            font-weight: bold;
+        }
+
+        .flashcard-front {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .flashcard-back {
+            display: none;
+        }
+
+        .flashcard.flipped .flashcard-front {
+            display: none;
+        }
+
+        .flashcard.flipped .flashcard-back {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .start-game-btn {
+            margin-top: 30px;
+            padding: 18px 50px;
+            font-size: 20px;
+            background: linear-gradient(45deg, #6bcf7f, #4caf50);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        .start-game-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(107, 207, 127, 0.5);
         }
 
         h1 {
@@ -344,11 +474,18 @@
                 </ul>
             </div>
             <div class="menu-buttons">
-                <button onclick="startGame()">▶ PLAY DEFAULT DATA</button>
+                <button onclick="enterStudyRoom()">▶ PLAY DEFAULT DATA</button>
                 <label for="fileInput" class="file-label">📁 CUSTOM LEVEL: UPLOAD TXT</label>
                 <input type="file" id="fileInput" accept=".txt" onchange="handleFileUpload(event)">
                 <div id="uploadStatus"></div>
             </div>
+        </div>
+
+        <div id="studyRoomScreen">
+            <h1>📖 STUDY ROOM</h1>
+            <p class="subtitle">Review the vocabulary words before starting the game.<br>Click on any card to flip it and see the details.</p>
+            <div id="flashcardContainer"></div>
+            <button onclick="startGameFromStudyRoom()" class="start-game-btn">🎮 I'M READY - START GAME</button>
         </div>
 
         <div id="levelCompleteScreen">
@@ -367,6 +504,6 @@
         </div>
     </div>
 
-    <script src="game.js?v=12"></script>
+    <script src="game.js?v=13"></script>
 </body>
 </html>
