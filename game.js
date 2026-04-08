@@ -159,9 +159,10 @@ class Hub {
         this.y = y;
         this.word = word;
         this.id = id;
-        this.radius = 50; // Increased from 22 to fit 3x larger text
+        this.baseRadius = 35; // Reduced base radius for minimalist look
         this.pulsePhase = Math.random() * Math.PI * 2;
         this.hasWord = true;
+        this.padding = 10; // Padding between text and circle edge
     }
 
     update(deltaTime) {
@@ -169,9 +170,53 @@ class Hub {
     }
 
     draw(ctx) {
+        // Dynamic font sizing based on word length
+        const baseFontSize = 24; // Base font size
+        const maxFontSize = 28; // Maximum font size
+        const minFontSize = 14; // Minimum font size for very long words
+        
+        // Start with base font size
+        let fontSize = baseFontSize;
+        ctx.font = `bold ${fontSize}px Arial`;
+        
+        // Measure text width
+        const textWidth = ctx.measureText(this.word).width;
+        
+        // Calculate required radius to fit text with padding
+        const requiredRadius = (textWidth / 2) + this.padding;
+        
+        // Dynamic radius: use larger of base radius or required radius
+        this.radius = Math.max(this.baseRadius, requiredRadius);
+        
+        // If text is too wide even for max radius, scale down font
+        const maxRadius = 60; // Maximum radius limit
+        if (this.radius > maxRadius) {
+            this.radius = maxRadius;
+            const maxAllowedWidth = (maxRadius - this.padding) * 2;
+            
+            // Binary search for optimal font size
+            let low = minFontSize;
+            let high = maxFontSize;
+            while (low <= high) {
+                const mid = Math.floor((low + high) / 2);
+                ctx.font = `bold ${mid}px Arial`;
+                const midWidth = ctx.measureText(this.word).width;
+                
+                if (midWidth <= maxAllowedWidth) {
+                    fontSize = mid;
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+            
+            // Apply final font size
+            ctx.font = `bold ${fontSize}px Arial`;
+        }
+        
         // Glow effect - changed to dark blue for contrast with white hub
         const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
-        ctx.shadowBlur = 15 * pulse;
+        ctx.shadowBlur = 12 * pulse;
         ctx.shadowColor = '#003d82'; // Dark blue glow
         
         // Main circle - pure white background
@@ -182,14 +227,13 @@ class Hub {
         
         // Draw border for better visibility
         ctx.strokeStyle = '#003d82'; // Dark blue border
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2;
         ctx.stroke();
         
         ctx.shadowBlur = 0;
         
-        // Word text - 3x larger (33px instead of 11px) with dark high-contrast blue
+        // Word text - dynamic font size with dark high-contrast blue
         ctx.fillStyle = '#003d82'; // Dark blue text for high contrast
-        ctx.font = 'bold 33px Arial'; // 3x larger font (11px * 3 = 33px)
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.word, this.x, this.y);
