@@ -126,7 +126,7 @@ class Hub {
         this.y = y;
         this.word = word;
         this.id = id;
-        this.radius = 22;
+        this.radius = 50; // Increased from 22 to fit 3x larger text
         this.pulsePhase = Math.random() * Math.PI * 2;
         this.hasWord = true;
     }
@@ -136,22 +136,27 @@ class Hub {
     }
 
     draw(ctx) {
-        // Glow effect
+        // Glow effect - changed to dark blue for contrast with white hub
         const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
         ctx.shadowBlur = 15 * pulse;
-        ctx.shadowColor = '#ff6b6b';
+        ctx.shadowColor = '#003d82'; // Dark blue glow
         
-        // Main circle - clean, minimal
+        // Main circle - pure white background
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#ff6b6b';
+        ctx.fillStyle = '#ffffff'; // Pure white fill
         ctx.fill();
+        
+        // Draw border for better visibility
+        ctx.strokeStyle = '#003d82'; // Dark blue border
+        ctx.lineWidth = 3;
+        ctx.stroke();
         
         ctx.shadowBlur = 0;
         
-        // Word text - clean small font
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 11px Arial';
+        // Word text - 3x larger (33px instead of 11px) with dark high-contrast blue
+        ctx.fillStyle = '#003d82'; // Dark blue text for high contrast
+        ctx.font = 'bold 33px Arial'; // 3x larger font (11px * 3 = 33px)
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.word, this.x, this.y);
