@@ -803,22 +803,33 @@ function initLevel(level) {
     particles = [];
     hoveredStation = null;
     
-    // Create hubs on left side - spacious layout (adapts to any number of words)
-    const hubX = canvas.width * 0.2;
-    const hubSpacing = canvas.height / (currentVocabData.length + 1);
+    // Define safe zone padding to avoid UI overlap
+    // Top padding for UI bar (score, level, time, etc.)
+    const topPadding = 80; // Space for the top UI bar
+    const bottomPadding = 120; // Space for the etymology hint bar at bottom
+    const leftPadding = 100; // Space from left edge
+    const rightPadding = 100; // Space from right edge
+    
+    // Calculate safe drawing area
+    const safeHeight = canvas.height - topPadding - bottomPadding;
+    const safeWidth = canvas.width - leftPadding - rightPadding;
+    
+    // Create hubs on left side - within safe zone
+    const hubX = leftPadding + safeWidth * 0.15;
+    const hubSpacing = safeHeight / (currentVocabData.length + 1);
     
     currentVocabData.forEach((data, i) => {
-        const y = hubSpacing * (i + 1);
+        const y = topPadding + hubSpacing * (i + 1);
         hubs.push(new Hub(hubX, y, data.word, i));
     });
     
-    // Create stations on right side (shuffled order for challenge)
-    const stationX = canvas.width * 0.8;
+    // Create stations on right side - within safe zone (shuffled order for challenge)
+    const stationX = canvas.width - rightPadding - safeWidth * 0.15;
     const shuffledIndices = [...Array(currentVocabData.length).keys()].sort(() => Math.random() - 0.5);
     
     shuffledIndices.forEach((originalIndex, i) => {
         const data = currentVocabData[originalIndex];
-        const y = hubSpacing * (i + 1);
+        const y = topPadding + hubSpacing * (i + 1);
         stations.push(new Station(stationX, y, data.word, data.sentence, originalIndex));
     });
     
