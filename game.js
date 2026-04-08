@@ -489,24 +489,32 @@ class Train {
     constructor(line) {
         this.line = line;
         this.position = 0;
-        this.speed = 0.08; // Slower train speed for ~30 minute gameplay
         this.direction = 1;
         this.carrying = null;
         this.radius = 7;
         this.waitingTime = 0;
         this.state = 'moving';
+        this.travelTime = 1.0; // Fixed 1-second travel time
+        this.currentTravelTime = 0; // Current progress in the travel
     }
 
     update(deltaTime) {
         if (this.state === 'moving') {
-            this.position += (this.speed * deltaTime) * this.direction;
+            // Fixed 1-second travel time regardless of line length
+            this.currentTravelTime += deltaTime;
+            const progress = Math.min(this.currentTravelTime / this.travelTime, 1);
             
-            if (this.position >= 1) {
-                this.position = 1;
-                this.direction = -1;
-            } else if (this.position <= 0) {
-                this.position = 0;
-                this.direction = 1;
+            // Apply easing for smooth movement (ease-in-out)
+            const easedProgress = this.easeInOutCubic(progress);
+            this.position = this.direction === 1 ? easedProgress : 1 - easedProgress;
+            
+            // Check if travel is complete
+            if (progress >= 1) {
+                if (this.direction === 1) {
+                    this.position = 1;
+                } else {
+                    this.position = 0;
+                }
             }
             
             this.checkInteractions();
@@ -514,8 +522,14 @@ class Train {
             this.waitingTime -= deltaTime;
             if (this.waitingTime <= 0) {
                 this.state = 'moving';
+                this.currentTravelTime = 0; // Reset travel timer
             }
         }
+    }
+
+    // Easing function for smooth acceleration/deceleration
+    easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     }
 
     checkInteractions() {
